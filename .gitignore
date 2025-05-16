@@ -1,0 +1,14 @@
+failed_actions
+insta_session
+kakaotalk
+.logs
+.DS_Store
+.vscode
+__pycache__/
+.env
+.venv
+backup
+logs
+chrome/
+setup_cron.sh
+HELP.md
