@@ -106,7 +106,7 @@ async def get_limit_by_weeks(ctx: discord.ApplicationContext):
 
 @bot.slash_command(name="언팔보기", description="언팔로워 조회")
 async def get_limit_by_weeks(ctx: discord.ApplicationContext, username: discord.Option(str, description="본인의 인스타그램 username을 입력해주세요.")):
-    await ctx.respond("언팔 검색은 팔로워 또는 팔로잉이 많을 수록 시간이 많이 소요됩니다.", ephemeral=True)
+    await ctx.respond("언팔 검색은 팔로워 또는 팔로잉이 많을 수록 시간이 많이 소요됩니다.(1,200명 기준 약 4분 소요)\n집계가 완료된 후 알려드리겠습니다.", ephemeral=True)
     db = Database()
     try:
         account = db.search_instagram_account(username)
