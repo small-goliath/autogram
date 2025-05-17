@@ -25,6 +25,9 @@ def main():
     db = Database()
     kakaotalk_file = "kakaotalk/KakaoTalk_latest.txt"
     log.info(f"Processing file: {kakaotalk_file}")
+    if not os.path.exists(kakaotalk_file):
+        log.info("최신 카카오톡 대화방 내용이 없습니다.")
+        return
     
     last_monday, this_monday = get_target_week_dates()
     formatted_last_monday = format_date(last_monday)
@@ -36,15 +39,14 @@ def main():
     try:
         # 대화방 내용 중 지난주 내용만 체크
         chat = ""
-        if os.path.exists(kakaotalk_file):
-            with open(kakaotalk_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if is_last_week:
-                        chat += line
-                    if line.strip() == formatted_last_monday:
-                        is_last_week = True
-                    elif line.strip() == formatted_this_monday:
-                        is_last_week = False
+        with open(kakaotalk_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                if is_last_week:
+                    chat += line
+                if line.strip() == formatted_last_monday:
+                    is_last_week = True
+                elif line.strip() == formatted_this_monday:
+                    is_last_week = False
 
         # 품앗이 대상 피드/릴스 캐치
         limit_by_weeks = os.environ.get("LIMIT_BY_WEEKS", "3")
