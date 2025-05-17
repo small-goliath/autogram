@@ -106,7 +106,7 @@ async def get_limit_by_weeks(ctx: discord.ApplicationContext):
 
 @bot.slash_command(name="언팔보기", description="언팔로워 조회")
 async def get_limit_by_weeks(ctx: discord.ApplicationContext, username: discord.Option(str, description="본인의 인스타그램 username을 입력해주세요.")):
-    await ctx.respond("언팔 검색은 팔로워 또는 팔로잉이 많을 수록 시간이 많이 소요됩니다. 잠시 후 다시 시도해주세요.", ephemeral=True)
+    await ctx.respond("언팔 검색은 팔로워 또는 팔로잉이 많을 수록 시간이 많이 소요됩니다.", ephemeral=True)
     db = Database()
     try:
         account = db.search_instagram_account(username)
@@ -119,7 +119,12 @@ async def get_limit_by_weeks(ctx: discord.ApplicationContext, username: discord.
         followings = insta.search_followings()
         non_followers = set(followings.values()) - set(followers.values())
         prefix = "https://instagram.com/"
-        await ctx.respond(f"맞팔이 아닌 유저를 찾았습니다.\n{"\n".join(prefix+non_follower.username for non_follower in non_followers)}", ephemeral=True)
+        if non_followers:
+            message = f"맞팔이 아닌 유저를 찾았습니다.\n" + "\n".join(prefix + non_follower.username for non_follower in non_followers)
+        else:
+            message = "맞팔이 아닌 유저가 없습니다."
+        
+        await ctx.send_followup(message, ephemeral=True)
     except FollowersError as e:
         await ctx.respond(f"{username}의 팔로워를 검색할 수 없습니다.", ephemeral=True)
     except FollowingsError as e:
