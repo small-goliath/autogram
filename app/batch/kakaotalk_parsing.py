@@ -73,7 +73,7 @@ def main():
         if os.path.exists(kakaotalk_file):
             last_sunday_date = this_monday.strftime("%Y-%m-%d")
             new_filename = f"kakaotalk/KakaoTalk_{last_sunday_date}.txt"
-            # os.rename(kakaotalk_file, new_filename)
+            os.rename(kakaotalk_file, new_filename)
 
 if __name__ == "__main__":
     log.info("Parsing KakaoTalk chat history...")
