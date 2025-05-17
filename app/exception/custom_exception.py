@@ -3,3 +3,9 @@ class CommentError(Exception):
 
 class LikeError(Exception):
     pass
+
+class FollowersError(Exception):
+    pass
+
+class FollowingsError(Exception):
+    pass

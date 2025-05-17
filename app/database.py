@@ -15,6 +15,13 @@ class Database():
         self.Session = sessionmaker(bind=self.engine)
         self.log = get_logger("root")
 
+    def search_instagram_account(self, username: str) -> InstagramAccount:
+        session = self.Session()
+        try:
+            return session.query(InstagramAccount).filter_by(username=username).first()
+        finally:
+            session.close()
+
     def search_instagram_accounts(self):
         session = self.Session()
         try:
