@@ -68,3 +68,19 @@ class Database():
             raise
         finally:
             session.close()
+
+    def search_action_targets_by_monday(self, account_id: int, target_monday: str) -> List[ActionTarget]:
+        session = self.Session()
+        try:
+            query = (
+                session.query(ActionTarget)
+                .filter(ActionTarget.id == account_id)
+                .filter(ActionTarget.monday == target_monday)
+                .all()
+            )
+            return query
+        except SQLAlchemyError as e:
+            self.log(f"action targets을 조회할 수 없습니다: {e}")
+            raise
+        finally:
+            session.close()
