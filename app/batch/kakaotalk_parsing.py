@@ -1,3 +1,4 @@
+from collections import defaultdict
 import os
 import re
 import sys
@@ -59,7 +60,6 @@ def main():
         action_targets = []
         messages = message_pattern.findall(chat)
         for match in messages:
-            print(match[0])
             action_targets.append(ActionTarget(
                 username=match[0],
                 link=str(match[1]).strip(),
@@ -68,9 +68,16 @@ def main():
             ))
 
         # db.save_action_targets(action_targets)
+        username_links = defaultdict(list)
+
         for t in action_targets:
-            log.info(t.username)
-            log.info(t.link)
+            username_links[t.username].append(t.link)
+
+        for username, links in username_links.items():
+            log.info(f"{username}: {len(links)}개")
+            for link in links:
+                log.info(f"  Link: {link}")
+
     except Exception as e:
         log.error(f"Batch failure: {e}")
         Discord().send_message(message=f"Batch failure: {e}")
