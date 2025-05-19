@@ -16,7 +16,7 @@ from app.model.entity import ActionTarget
 log = get_logger("discord_bot")
 bot = discord.Bot(command_prefix="!")
 
-limit_by_weeks = 3
+limit_by_weeks = 7
 
 # def get_kst_now():
 #     return datetime.now(timezone(timedelta(hours=9)))
@@ -127,7 +127,28 @@ async def set_limit_by_weeks(ctx: discord.ApplicationContext,
     
     await ctx.respond(f'일주일에 {limit}회까지 요청할 수 있도록 변경되었습니다.', ephemeral=True)
 
-@bot.slash_command(name="횟수보기", description="주당 제한 횟수 조회")
+@bot.slash_command(name="횟수", description="나의 품앗이 요청 건수")
+async def set_limit_by_weeks(ctx: discord.ApplicationContext):
+    db = Database()
+    username = ctx.author.name
+    await ctx.respond(f'{username}님의 등록 수를 조회 중입니다.', ephemeral=True)
+
+    try:
+        account = db.search_instagram_account(username=username)
+        if not account:
+            await ctx.send_followup(f'{username}은 본 서비스에 등록되지 않은 계정입니다.', ephemeral=True)
+            return
+        
+        KST = timezone(timedelta(hours=9))
+        today = datetime.now(KST)
+        this_monday = today - timedelta(days=today.weekday())
+        action_targets = db.search_action_targets_by_monday(account_id=account.id, target_monday=this_monday)
+
+        await ctx.send_followup(f'이미 이번주에 {len(action_targets)}개를 등록하셨습니다.', ephemeral=True)
+    except:
+        await ctx.send_followup(f'조회 할 수 없습니다. 관리자에게 문의해주세요.', ephemeral=True)
+
+@bot.slash_command(name="주당횟수", description="주당 제한 횟수 조회")
 async def get_limit_by_weeks(ctx: discord.ApplicationContext):
     await ctx.respond(f'일주일에 {limit_by_weeks}회까지 요청할 수 있습니다.', ephemeral=True)
 
