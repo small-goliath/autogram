@@ -144,7 +144,7 @@ async def set_limit_by_weeks(ctx: discord.ApplicationContext):
         this_monday = today - timedelta(days=today.weekday())
         action_targets = db.search_action_targets_by_monday(account_id=account.id, target_monday=this_monday)
 
-        await ctx.send_followup(f'이미 이번주에 {len(action_targets)}개를 등록하셨습니다.', ephemeral=True)
+        await ctx.send_followup(f'현재까지 {len(action_targets)}개를 등록하셨습니다.', ephemeral=True)
     except:
         await ctx.send_followup(f'조회 할 수 없습니다. 관리자에게 문의해주세요.', ephemeral=True)
 
