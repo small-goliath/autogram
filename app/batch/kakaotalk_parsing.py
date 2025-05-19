@@ -51,7 +51,7 @@ def main():
         # 품앗이 대상 피드/릴스 캐치
         limit_by_weeks = os.environ.get("LIMIT_BY_WEEKS", "3")
         message_pattern = re.compile(
-            fr"\[(.*?)\] \[오. (.*?)\]\s*(.*?)\s*(https://www\.instagram\.com[^\s]+)\s*((?:.|\n)*?/{re.escape(limit_by_weeks)})",
+            rf"\[(.*?)\](?:.|\n)*?(https://www\.instagram\.com[^\s]*)(?:.|\n)*?/{limit_by_weeks}",
             re.MULTILINE
         )
 
@@ -59,14 +59,18 @@ def main():
         action_targets = []
         messages = message_pattern.findall(chat)
         for match in messages:
+            print(match[0])
             action_targets.append(ActionTarget(
-                username=str(match[0]).split("@")[1],
-                link=str(match[3]).strip(),
+                username=match[0],
+                link=str(match[1]).strip(),
                 monday=last_monday.strftime("%Y-%m-%d"),
                 sunday=(this_monday - timedelta(days=1)).strftime("%Y-%m-%d")
             ))
 
-        db.save_action_targets(action_targets)
+        # db.save_action_targets(action_targets)
+        for t in action_targets:
+            log.info(t.username)
+            log.info(t.link)
     except Exception as e:
         log.error(f"Batch failure: {e}")
         Discord().send_message(message=f"Batch failure: {e}")
