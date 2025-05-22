@@ -3,10 +3,11 @@ import os
 import re
 import sys
 import locale
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from app.model.entity import ActionTarget
 from app.logger import get_logger
 from app.batch.notification import Discord
+from app.util import get_today
 
 # 카카오톡 대화내용 파싱
 
@@ -14,8 +15,7 @@ log = get_logger("kakaotalk_parser")
 locale.setlocale(locale.LC_TIME, 'ko_KR.UTF-8')
 
 def get_target_week_dates():
-    KST = timezone(timedelta(hours=9))
-    today = datetime.now(KST)
+    today = get_today()
     # last_monday = today - timedelta(days=today.weekday() + 7)
     # this_monday = today - timedelta(days=today.weekday())
     last_monday = today - timedelta(days=today.weekday())

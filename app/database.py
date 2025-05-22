@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 from app.logger import get_logger
-from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Producer
+from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Payment, Producer
 
 load_dotenv()
 database_url = os.environ.get('DATABASE_URL')
@@ -23,7 +23,16 @@ def transactional():
         raise
     finally:
         session.close()
-        
+
+@contextmanager
+def read_only_transactional():
+    session = Session()
+    try:
+        yield session
+        session.rollback()
+    finally:
+        session.close()
+
 class Database():
     def __init__(self):
         self.log = get_logger("root")
@@ -83,3 +92,6 @@ class Database():
 
     def search_consumers(self, session: Session) -> List[Consumer]:
         return session.query(Consumer).filter_by(enabled=True).all()
+    
+    def search_payment(self, session: Session, username: str, year_month: str) -> Payment:
+        return session.query(Payment).filter_by(username=username).filter_by(year_month=year_month).first()

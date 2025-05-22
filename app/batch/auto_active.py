@@ -4,7 +4,6 @@ import sys
 from typing import List
 from warnings import deprecated
 from dotenv import load_dotenv
-from datetime import datetime, timedelta, timezone
 
 from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, LikeError
@@ -13,6 +12,7 @@ from app.insta import Insta
 from app.logger import get_logger
 from app.database import Database
 from app.model.entity import Action
+from app.util import get_formatted_today
 
 log = get_logger("auto_activer")
 
@@ -64,8 +64,8 @@ def main():
 
         if len(actions) > 0:
             load_dotenv()
-            KST = timezone(timedelta(hours=9))
-            filename = f"{os.environ.get('FAILED_ACTIONS_DIR')}/{datetime.now(KST).strftime("%Y-%m-%d")}.csv"
+            today = get_formatted_today("%Y-%m-%d")
+            filename = f"{os.environ.get('FAILED_ACTIONS_DIR')}/{today}.csv"
             with open(filename, mode='w', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow(["action_target_id", "account_id"])

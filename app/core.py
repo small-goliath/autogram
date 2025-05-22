@@ -3,11 +3,12 @@ from typing import List
 from instagrapi.types import Media
 
 from app.batch.notification import Discord
-from app.database import Database, transactional
+from app.database import Database, read_only_transactional, transactional
 from app.exception.custom_exception import CommentError, LikeError, SearchCommentError
 from app.gpt import GPT
 from app.insta import Insta
 from app.logger import get_logger
+from app.util import get_formatted_today
 
 log = get_logger("auto_activer")
 db = Database()
@@ -34,11 +35,19 @@ def login_producers() -> List[Insta]:
         return producer_instagrams
     
 def get_consumers() -> List[str]:
-    with transactional() as session:
+    with read_only_transactional() as session:
         consumers = db.search_consumers(session)
         return [consumer.username for consumer in consumers]
+    
+def set_payment(username: str, count: int):
+    today = get_formatted_today("%Y-%m")
+    with transactional() as session:
+        payment = db.search_payment(session=session, username=username, year_month=today)
+        payment.count += count
+        session.add(payment)
 
-def process_feeds(producer_instagram: Insta, feeds: List[Media]):
+def process_feeds(producer_instagram: Insta, feeds: List[Media]) -> int:
+    count = 0
     gpt = GPT()
     for feed in feeds:
         try:
@@ -48,6 +57,7 @@ def process_feeds(producer_instagram: Insta, feeds: List[Media]):
             comment = gpt.generate_comment(feed.caption_text)
             producer_instagram.comment(feed.id, comment)
             producer_instagram.like(feed.id)
+            count += 1
         except SearchCommentError as e:
             log_and_notify("댓글조회", producer_instagram, feed, e)
         except CommentError as e:
@@ -79,6 +89,7 @@ def action():
                 if consumer_username not in target_feeds:
                     target_feeds[consumer_username] = producer_instagram.search_feeds_such_user_id(username=consumer_username, amount=4)
                 
-                process_feeds(producer_instagram, target_feeds[consumer_username])
+                count = process_feeds(producer_instagram, target_feeds[consumer_username])
+                set_payment(consumer_username, count)
             except Exception as e:
                 log.warning(f"{producer_instagram}계정으로 {consumer_username} 액션 실패: {e}")

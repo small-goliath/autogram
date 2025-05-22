@@ -1,16 +1,14 @@
 import os
-import re
 import discord
-from typing import List
 from dotenv import load_dotenv
-from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from app.database import Database
 from app.exception.custom_exception import FollowersError, FollowingsError
 from app.insta import Insta
 from app.logger import get_logger
 from app.model.entity import ActionTarget
+from app.util import get_today
 
 
 log = get_logger("discord_bot")
@@ -100,8 +98,7 @@ async def create_link(ctx: discord.ApplicationContext,
             await ctx.send_followup(f'{username}은 본 서비스에 등록되지 않은 계정입니다.', ephemeral=True)
             return
         
-        KST = timezone(timedelta(hours=9))
-        today = datetime.now(KST)
+        today = get_today()
         this_monday = today - timedelta(days=today.weekday())
         action_targets = db.search_action_targets_by_monday(account_id=account.id, target_monday=this_monday)
 
@@ -139,8 +136,7 @@ async def set_limit_by_weeks(ctx: discord.ApplicationContext):
             await ctx.send_followup(f'{username}은 본 서비스에 등록되지 않은 계정입니다.', ephemeral=True)
             return
         
-        KST = timezone(timedelta(hours=9))
-        today = datetime.now(KST)
+        today = get_today()
         this_monday = today - timedelta(days=today.weekday())
         action_targets = db.search_action_targets_by_monday(account_id=account.id, target_monday=this_monday)
 
