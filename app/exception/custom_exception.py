@@ -1,3 +1,5 @@
+class SearchCommentError(Exception):
+    pass
 class CommentError(Exception):
     pass
 
