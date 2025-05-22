@@ -38,6 +38,8 @@ def main():
                 targets = db.search_action_targets(account.id)
                 link = ""
                 for target in targets:
+                    if target.username == account.username:
+                        continue
                     link = target.link
                     media_id = insta.get_media_id(link)
                     media = insta.get_media(media_id)
@@ -46,14 +48,14 @@ def main():
                     actions.append(Action(action_target_id=target.id, account_id=account.id))
                     insta.like(media_id)
             except CommentError as e:
-                log.error(f"{account.id} 계정으로 {link} 댓글달기 실패.")
-                discord.send_message(f"{account.id} 계정으로 {link} 댓글달기 실패 [{e}]")
+                log.error(f"{account.username} 계정으로 {link} 댓글달기 실패.")
+                discord.send_message(f"{account.username} 계정으로 {link} 댓글달기 실패 [{e}]")
             except LikeError as e:
-                log.error(f"{account.id} 계정으로 {link} 좋아요 실패.")
-                discord.send_message(f"{account.id} 계정으로 {link} 좋아요 실패 [{e}]")
+                log.error(f"{account.username} 계정으로 {link} 좋아요 실패.")
+                discord.send_message(f"{account.username} 계정으로 {link} 좋아요 실패 [{e}]")
             except Exception as e:
-                log.error(f"{account.id} 계정으로 {link} 품앗이 실패.")
-                discord.send_message(f"{account.id} 계정으로 {link} 품앗이 실패 [{e}]")
+                log.error(f"{account.username} 계정으로 {link} 품앗이 실패.")
+                discord.send_message(f"{account.username} 계정으로 {link} 품앗이 실패 [{e}]")
                 
         db.save_actions(actions=actions)
     except Exception as e:
