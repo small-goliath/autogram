@@ -26,7 +26,7 @@ def transactional():
 
 @contextmanager
 def read_only_transactional():
-    session = Session()
+    session = sessionmaker(autocommit=False, autoflush=False, bind=engine)()
     try:
         yield session
         session.rollback()
