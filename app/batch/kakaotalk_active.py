@@ -1,4 +1,5 @@
 import sys
+from typing import List
 from warnings import deprecated
 
 from app.batch import kakaotalk_parsing
@@ -8,6 +9,7 @@ from app.gpt import GPT
 from app.insta import Insta
 from app.logger import get_logger
 from app.database import Database
+from app.model.entity import InstagramAccount
 
 log = get_logger("auto_activer")
 
@@ -19,7 +21,7 @@ def main():
     discord = Discord()
 
     try:
-        accounts = db.search_instagram_accounts()
+        accounts: List[InstagramAccount] = db.search_instagram_accounts()
         if not accounts:
             log.warning("실행할 인스타그램 계정이 없습니다.")
             return
@@ -35,6 +37,8 @@ def main():
                 for target in targets:
                     link = target.link
                     media_id = insta.get_media_id(link)
+                    if insta.exists_comment(media_id=media_id, username=account.username):
+                        continue
                     media = insta.get_media(media_id)
                     comment = gpt.generate_comment(media.caption_text)
                     insta.comment(media_id, comment)
