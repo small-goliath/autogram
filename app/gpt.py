@@ -13,7 +13,7 @@ class GPT():
     def generate_comment(self, content: str):
         self.log.info("댓글 생성 중...")
         prompt = f"""
-            아래 게시글에 대해서 특수문자를 사용하지 않고 한글 또는 이모지로만 이루어진 댓글 하나만 작성해줘.
+            아래 게시글에 대해서 특수문자를 사용하지 않고 한글 또는 이모지로만 이루어진 댓글을 친한 친구에게 이야기 하듯이 작성해줘.
             
             ```
             {content}
