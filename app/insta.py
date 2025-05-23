@@ -1,8 +1,8 @@
 import json
 import os
 from time import sleep
-from typing import Dict, List
-from instagrapi.types import Media, Comment, User
+from typing import List
+from instagrapi.types import Media, Comment
 from instagrapi import Client
 from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, FollowersError, FollowingsError, LikeError, SearchCommentError
