@@ -66,6 +66,7 @@ def process_feeds(producer_instagram: Insta, feeds: List[Media]) -> int:
             log_and_notify("좋아요", producer_instagram, feed, e)
         except Exception as e:
             log_and_notify("댓글/좋아요", producer_instagram, feed, e)
+    return count
 
 def log_and_notify(action: str, producer_instagram: Insta, media: Media, error: Exception):
     feed_info = f"{media.user.full_name}의 피드: {media.caption_text}"
