@@ -43,6 +43,7 @@ def set_payment(username: str, count: int):
     today = get_formatted_today("%Y-%m")
     with transactional() as session:
         payment = db.search_payment(session=session, username=username, year_month=today)
+        log.info(f"{username}의 count를 {count}만큼 더합니다.")
         payment.count += count
         session.add(payment)
 
