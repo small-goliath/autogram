@@ -1,8 +1,8 @@
 import json
 import os
 from time import sleep
-from typing import List
-from instagrapi.types import Media, Comment
+from typing import Dict, List
+from instagrapi.types import Media, Comment, UserShort
 from instagrapi import Client
 from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, FollowersError, FollowingsError, LikeError, SearchCommentError
@@ -70,18 +70,36 @@ class Insta:
         except Exception as e:
             raise LikeError("좋아요를 하지 못했습니다.") from e
         
-    def search_followers(self):
+    def search_followers(self) -> Dict[str, UserShort]:
         try:
             return self.client.user_followers(self.client.user_id)
         except Exception as e:
             self.log.error(f"{self.client.user_id}의 팔로워를 검색할 수 없습니다.")
             raise FollowersError("팔로워 조회를 하지 못했습니다.") from e
     
-    def search_followings(self):
+    def search_followings(self) -> Dict[str, UserShort]:
         try:
             return self.client.user_following(self.client.user_id)
         except Exception as e:
             self.log.error(f"{self.client.user_id}의 팔로잉을 검색할 수 없습니다.")
+            raise FollowingsError("팔로잉 조회를 못했습니다.") from e
+        
+    def search_followers_by_user_id(self, user_id: int) -> Dict[str, UserShort]:
+        self.log.info(f"10초 후 {user_id}의 팔로워를 검색합니다.")
+        sleep(10)
+        try:
+            return self.client.user_followers(user_id)
+        except Exception as e:
+            self.log.error(f"{user_id}의 팔로워를 검색할 수 없습니다 {e}")
+            raise FollowersError("팔로워 조회를 하지 못했습니다.") from e
+    
+    def search_followings_by_user_id(self, user_id: int) -> Dict[str, UserShort]:
+        self.log.info(f"10초 후 {user_id}의 팔로잉를 검색합니다.")
+        sleep(10)
+        try:
+            return self.client.user_following(user_id)
+        except Exception as e:
+            self.log.error(f"{user_id}의 팔로잉을 검색할 수 없습니다: {e}")
             raise FollowingsError("팔로잉 조회를 못했습니다.") from e
         
     def exists_comment(self, media_id: str, username: str) -> bool:

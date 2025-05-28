@@ -3,11 +3,9 @@ import sys
 from app.batch.notification import Discord
 from app.core import action
 from app.logger import get_logger
-from app.database import Database
 
 log = get_logger("auto_activer")
 discord = Discord()
-db = Database()
 
 # 서비스를 제공해주는 사람들(Producer)로부터 서비스를 받는 사람들(Consumer)에게 좋아요와 댓글 자동화
 def main():

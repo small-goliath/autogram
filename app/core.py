@@ -1,6 +1,9 @@
+import json
+import os
 import sys
 from typing import List
 from instagrapi.types import Media
+from dotenv import load_dotenv
 
 from app.batch.notification import Discord
 from app.database import Database, read_only_transactional, transactional
@@ -8,6 +11,7 @@ from app.exception.custom_exception import CommentError, LikeError, SearchCommen
 from app.gpt import GPT
 from app.insta import Insta
 from app.logger import get_logger
+from app.model.entity import Unfollower
 from app.util import get_formatted_today
 
 log = get_logger("auto_activer")
@@ -94,3 +98,44 @@ def action():
                 set_payment(consumer_username, count)
             except Exception as e:
                 log.warning(f"{producer_instagram}계정으로 {consumer_username} 액션 실패: {e}")
+
+def login_producer(username: str) -> Insta:
+    with transactional() as session:
+        producer = db.search_producer(username=username, session=session)
+        if not producer:
+            log.warning("실행할 인스타그램 계정이 없습니다.")
+            sys.exit(0)
+        
+        producer_instagram = Insta(producer)
+        try:
+            producer_instagram.login()
+        except Exception as e:
+            log.error(f"{producer.username} 로그인 실패: {e}")
+            discord.send_message(f"{producer.username} 로그인 실패 [{e}]")
+
+        return producer_instagram
+    
+def save_unfollowers():
+    load_dotenv()
+    user_id_map = json.loads(os.getenv("USER_ID_MAP"))
+    admin_username = "_doto.ri_"
+
+    producer_instagram = login_producer(username=admin_username)
+    with transactional() as session:
+        target_users = db.search_unfollower_users(session)
+        if not target_users:
+            log.warning("실행할 인스타그램 계정이 없습니다.")
+            return
+        
+        for target_user in target_users:
+            try:
+                user_id = user_id_map[target_user.username]
+                followers = producer_instagram.search_followers_by_user_id(user_id)
+                followings = producer_instagram.search_followings_by_user_id(user_id)
+                unfollowers = set(followings.values()) - set(followers.values())
+                unfollowers = [Unfollower(target_user_id=target_user.id, username=unfollower.username, nickname=unfollower.full_name) for unfollower in unfollowers]
+                
+                db.save_unfollowers(session=session, unfollowers=unfollowers)
+            except Exception as e:
+                log.warning(f"{target_user.username} 언팔 조회 실패: {e}")
+                discord.send_message(f"{target_user.username} 언팔 조회 실패: {e}")

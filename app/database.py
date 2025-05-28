@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 from app.logger import get_logger
-from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Payment, Producer
+from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Payment, Producer, Unfollower, UnfollowerUser
 
 load_dotenv()
 database_url = os.environ.get('DATABASE_URL')
@@ -43,55 +43,20 @@ class Database():
     def search_instagram_accounts(self, session: Session) -> List[InstagramAccount]:
         return session.query(InstagramAccount).filter_by(enabled=True).all()
 
-    def save_action_targets(self, session: Session, targets: List[ActionTarget]):
-        try:
-            session.bulk_save_objects(targets)
-            session.commit()
-        except SQLAlchemyError as e:
-            session.rollback()
-            self.log(f"action targets을 저장할 수 없습니다: {e}")
-            raise
-
-    def save_actions(self, session: Session, actions: List[Action]):
-        try:
-            session.bulk_save_objects(actions)
-            session.commit()
-        except SQLAlchemyError as e:
-            session.rollback()
-            self.log(f"actions를 저장할 수 없습니다: {e}")
-            raise
-
-    def search_action_targets(self, session: Session, account_id: int) -> List[ActionTarget]:
-        try:
-            query = (
-                session.query(ActionTarget)
-                .outerjoin(Action, (ActionTarget.id == Action.action_target_id) & (Action.account_id == account_id))
-                .filter(Action.id == None)
-                .all()
-            )
-            return query
-        except SQLAlchemyError as e:
-            self.log(f"action targets을 조회할 수 없습니다: {e}")
-            raise
-
-    def search_action_targets_by_monday(self, session: Session, account_id: int, target_monday: str) -> List[ActionTarget]:
-        try:
-            query = (
-                session.query(ActionTarget)
-                .filter(ActionTarget.id == account_id)
-                .filter(ActionTarget.monday == target_monday)
-                .all()
-            )
-            return query
-        except SQLAlchemyError as e:
-            self.log(f"action targets을 조회할 수 없습니다: {e}")
-            raise
+    def save_unfollowers(self, session: Session, unfollowers: List[Unfollower]):
+        session.bulk_save_objects(unfollowers)
 
     def search_producers(self, session: Session) -> List[Producer]:
         return session.query(Producer).filter_by(enabled=True).all()
+    
+    def search_producer(self, username: str, session: Session) -> Producer:
+        return session.query(Producer).filter_by(username=username).first()
 
     def search_consumers(self, session: Session) -> List[Consumer]:
         return session.query(Consumer).filter_by(enabled=True).all()
     
     def search_payment(self, session: Session, username: str, year_month: str) -> Payment:
         return session.query(Payment).filter_by(username=username).filter_by(year_month=year_month).first()
+
+    def search_unfollower_users(self, session: Session) -> List[UnfollowerUser]:
+        return session.query(UnfollowerUser).filter_by(enabled=True).all()
