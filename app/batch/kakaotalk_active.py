@@ -2,6 +2,7 @@ import sys
 from typing import List
 from warnings import deprecated
 
+import app.core as core
 from app.batch import kakaotalk_parsing
 from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, LikeError
@@ -14,19 +15,19 @@ from app.model.entity import InstagramAccount
 log = get_logger("auto_activer")
 
 # 카카오톡 채팅방 대화내용으로부터 일괄 댓글/좋아요
-@deprecated
 def main():
     db = Database()
     gpt = GPT()
     discord = Discord()
 
     try:
-        accounts: List[InstagramAccount] = db.search_instagram_accounts()
+        accounts = core.search_instagram_accounts()
         if not accounts:
             log.warning("실행할 인스타그램 계정이 없습니다.")
             return
         
         for account in accounts:
+            account = InstagramAccount(id=account['id'], username=account['username'], session=account['session'])
             if account.username != "doto.ri_":
                 continue
             insta = Insta(account)

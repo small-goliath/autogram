@@ -16,10 +16,10 @@ locale.setlocale(locale.LC_TIME, 'ko_KR.UTF-8')
 
 def get_target_week_dates():
     today = get_today()
-    # last_monday = today - timedelta(days=today.weekday() + 7)
-    # this_monday = today - timedelta(days=today.weekday())
-    last_monday = today - timedelta(days=today.weekday())
-    this_monday = today + timedelta(days=1)
+    last_monday = today - timedelta(days=today.weekday() + 7)
+    this_monday = today - timedelta(days=today.weekday())
+    # last_monday = today - timedelta(days=today.weekday())
+    # this_monday = today + timedelta(days=1)
     return last_monday, this_monday
 
 def format_date(date):
@@ -62,6 +62,7 @@ def parsing() -> list[ActionTarget]:
         action_targets = []
         messages = message_pattern.findall(chat)
         for match in messages:
+            print(match)
             action_targets.append(ActionTarget(
                 username=match[0],
                 link=str(match[1]).strip(),
