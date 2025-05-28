@@ -154,10 +154,6 @@ class Insta:
             'sec-fetch-site': 'same-origin',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
         }
-        params = {
-            'query_hash': query_hash,
-            'variables': json.dumps(variables, separators=(',', ':'))
-        }
         cookies = {
             "sessionid": self.client.sessionid
         }
@@ -175,6 +171,10 @@ class Insta:
                 variables["after"] = end_cursor
             if csrftoken:
                 cookies["csrftoken"] = csrftoken
+            params = {
+                'query_hash': query_hash,
+                'variables': json.dumps(variables, separators=(',', ':'))
+            }
             count += 1
             self.log.info(f"=== {count}번째 언팔로워 조회 ===")
             self.log.info(params)
@@ -182,7 +182,6 @@ class Insta:
             response = requests.get(base_url, params=params, headers=headers, cookies=cookies)
             response.raise_for_status()
             csrftoken = response.cookies.get("csrftoken")
-            self.log.info(response.content)
 
             data = response.json()["data"]
             if not data["user"] and not unfollowers:
@@ -201,7 +200,6 @@ class Insta:
                 followed_by_viewer = util.json_value(edge, "node", "followed_by_viewer", default=False)
                 follows_viewer = util.json_value(edge, "node", "profile_pifollows_viewerc_url", default=False)
                 if followed_by_viewer and not follows_viewer:
-                    self.log.info(f"{user_id}의 {len(unfollowers)+1}번째 언팔로워: {username}")
                     unfollowers.append(Unfollower(target_user_id=target_user_id, username=username, nickname=nickname, profile_uri=profile_uri))
             end_cursor = page_info.get("end_cursor")
             if not page_info.get("has_next_page") or not end_cursor:
