@@ -132,10 +132,7 @@ def save_unfollowers():
         target_username = target_user['username']
         try:
             user_id = user_id_map[target_username]
-            followers = producer_instagram.search_followers_by_user_id(user_id)
-            followings = producer_instagram.search_followings_by_user_id(user_id)
-            unfollowers = set(followings.values()) - set(followers.values())
-            unfollowers = [Unfollower(target_user_id=target_user['id'], username=unfollower.username) for unfollower in unfollowers]
+            unfollowers = producer_instagram.search_unfollowers(user_id)
             
             with transactional() as session:
                 db.delete_all_unfollowers(session=session, user_id=target_user['id'])
