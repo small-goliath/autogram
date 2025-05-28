@@ -122,21 +122,22 @@ def save_unfollowers():
     admin_username = "_doto.ri_"
 
     producer_instagram = login_producer(username=admin_username)
-    with transactional() as session:
+    with read_only_transactional() as session:
         target_users = db.search_unfollower_users(session)
         if not target_users:
             log.warning("실행할 인스타그램 계정이 없습니다.")
             return
         
-        for target_user in target_users:
-            try:
-                user_id = user_id_map[target_user.username]
-                followers = producer_instagram.search_followers_by_user_id(user_id)
-                followings = producer_instagram.search_followings_by_user_id(user_id)
-                unfollowers = set(followings.values()) - set(followers.values())
-                unfollowers = [Unfollower(target_user_id=target_user.id, username=unfollower.username, nickname=unfollower.full_name) for unfollower in unfollowers]
-                
+    for target_user in target_users:
+        try:
+            user_id = user_id_map[target_user['username']]
+            followers = producer_instagram.search_followers_by_user_id(user_id)
+            followings = producer_instagram.search_followings_by_user_id(user_id)
+            unfollowers = set(followings.values()) - set(followers.values())
+            unfollowers = [Unfollower(target_user_id=target_user['id'], username=unfollower.username) for unfollower in unfollowers]
+            
+            with transactional() as session:
                 db.save_unfollowers(session=session, unfollowers=unfollowers)
-            except Exception as e:
-                log.warning(f"{target_user.username} 언팔 조회 실패: {e}")
-                discord.send_message(f"{target_user.username} 언팔 조회 실패: {e}")
+        except Exception as e:
+            log.warning(f"{target_user['username']} 언팔 조회 실패: {e}")
+            discord.send_message(f"{target_user['username']} 언팔 조회 실패: {e}")

@@ -59,4 +59,5 @@ class Database():
         return session.query(Payment).filter_by(username=username).filter_by(year_month=year_month).first()
 
     def search_unfollower_users(self, session: Session) -> List[UnfollowerUser]:
-        return session.query(UnfollowerUser).filter_by(enabled=True).all()
+        unfollowerUsers = session.query(UnfollowerUser).filter_by(enabled=True).all()
+        return [{"id": unfollowerUser.id, "username": unfollowerUser.username} for unfollowerUser in unfollowerUsers]
