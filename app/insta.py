@@ -1,13 +1,16 @@
+import requests
 import json
 import os
 from time import sleep
+from urllib.parse import urlencode
 from typing import Dict, List
 from instagrapi.types import Media, Comment, UserShort
 from instagrapi import Client
 from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, FollowersError, FollowingsError, LikeError, SearchCommentError
-from app.model.entity import Producer
+from app.model.entity import Producer, Unfollower
 from app.logger import get_logger
+import app.util as util
 
 class Insta:
     def __init__(self, account: Producer):
@@ -124,3 +127,76 @@ class Insta:
         self.log.info(f"{username}의 최신 피드 {amount}개를 조회합니다.")
         target_user_id = self.search_user_ids(username=username)
         return self.search_feeds(user_id=target_user_id, amount=amount)
+    
+    def search_unfollowers(self, user_id: int) -> List[Unfollower]:
+        base_url = "https://www.instagram.com/graphql/query/"
+        query_hash = "3dec7e2c57367ef3da3d987d89f9dbc8"
+        variables = {
+            "id": str(user_id),
+            "include_reel": "true",
+            "fetch_mutual": "false",
+            "first": "24"
+        }
+        headers = {
+            'accept': '*/*',
+            'accept-language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'priority': 'u=1, i',
+            'referer': 'https://www.instagram.com/',
+            'sec-ch-prefers-color-scheme': 'dark',
+            'sec-ch-ua': '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"',
+            'sec-ch-ua-full-version-list': '"Chromium";v="134.0.6998.89", "Not:A-Brand";v="24.0.0.0", "Google Chrome";v="134.0.6998.89"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-model': '""',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-ch-ua-platform-version': '"10.0.0"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
+        }
+        params = {
+            'query_hash': query_hash,
+            'variables': json.dumps(variables, separators=(',', ':'))
+        }
+        cookies = {}
+        
+        unfollowers = []
+        end_cursor: str = None
+        csrftoken: str = None
+        count = 0
+        sleep_amount = 5
+        while True:
+            if count > sleep_amount:
+                sleep(10)
+                count = 0
+            if end_cursor:
+                variables["after"] = end_cursor
+            if csrftoken:
+                cookies["csrftoken"] = csrftoken
+            count += 1
+            response = requests.get(base_url, params=params, headers=headers, cookies=cookies)
+            response.raise_for_status()
+            csrftoken = response.cookies.get("csrftoken")
+
+            data = response.json()["data"]
+            if not data["user"] and not unfollowers:
+                raise Exception(f"{user_id}의 언팔로워를 조회할 수 없습니다.")
+            
+            page_info = util.json_value(data, "user", "edge_follow", "page_info", default={})
+            edges = util.json_value(data, "user", "edge_follow", "edges", default=[])
+            for edge in edges:
+                target_user_id = util.json_value(edge, "node", "id", default=None)
+                if not target_user_id:
+                    continue
+                username = util.json_value(edge, "node", "username", default=None)
+                nickname = util.json_value(edge, "node", "full_name", default=None)
+                profile_uri = util.json_value(edge, "node", "profile_pic_url", default=None)
+                followed_by_viewer = util.json_value(edge, "node", "followed_by_viewer", default=False)
+                follows_viewer = util.json_value(edge, "node", "profile_pifollows_viewerc_url", default=False)
+                if followed_by_viewer and not follows_viewer:
+                    unfollowers.append(Unfollower(target_user_id=target_user_id, username=username, nickname=nickname, profile_uri=profile_uri))
+            end_cursor = page_info.get("end_cursor")
+            if not page_info.get("has_next_page") or not end_cursor:
+                break
+            
+        return unfollowers
