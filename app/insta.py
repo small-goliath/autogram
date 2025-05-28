@@ -177,12 +177,13 @@ class Insta:
             if csrftoken:
                 cookies["csrftoken"] = csrftoken
             count += 1
-            self.log.info("=== 언팔로워 조회 ===")
+            self.log.info(f"=== {count}번째 언팔로워 조회 ===")
             self.log.info(params)
             self.log.info(cookies)
             response = requests.get(base_url, params=params, headers=headers, cookies=cookies)
             response.raise_for_status()
             csrftoken = response.cookies.get("csrftoken")
+            self.log.info(response.content)
 
             data = response.json()["data"]
             if not data["user"] and not unfollowers:
