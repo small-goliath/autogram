@@ -138,7 +138,7 @@ class Insta:
             "first": "24"
         }
         headers = {
-            'authorization': self.client.authorization(),
+            'authorization': self.client.authorization,
             'accept': '*/*',
             'accept-language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
             'priority': 'u=1, i',
