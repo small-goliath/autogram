@@ -21,16 +21,15 @@ class Insta:
         try:
             self.log.info(f"{self.username}으로 로그인을 시도합니다.")
 
-            if self.session:
-                try:
+            try:
+                if os.path.exists(self.session_file):
+                    with open(self.session_file, 'r', encoding='utf-8') as f:
+                        content = json.load(f)
+                        self.client.set_settings(content)
+                else:
                     self.client.set_settings(self.session)
-                except:
-                    if os.path.exists(self.session_file):
-                        with open(self.session_file, 'r', encoding='utf-8') as f:
-                            content = json.load(f)
-                            self.client.set_settings(content)
-            else:
-                raise Exception("계정 재등록 필요.")
+            except Exception as e:
+                raise Exception("계정 재등록 필요.") from e
             self.log.info(f"===== {self.username}으로 로그인하였습니다. =====")
         except Exception as e:
             self.log(f"{self.username} 계정을 로그인할 수 없습니다: {e}")
