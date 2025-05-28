@@ -159,7 +159,9 @@ class Insta:
             'query_hash': query_hash,
             'variables': json.dumps(variables, separators=(',', ':'))
         }
-        cookies = {}
+        cookies = {
+            "sessionid": self.client.sessionid
+        }
         
         unfollowers = []
         end_cursor: str = None
@@ -175,6 +177,9 @@ class Insta:
             if csrftoken:
                 cookies["csrftoken"] = csrftoken
             count += 1
+            self.log.info("=== 언팔로워 조회 ===")
+            self.log.info(params)
+            self.log.info(cookies)
             response = requests.get(base_url, params=params, headers=headers, cookies=cookies)
             response.raise_for_status()
             csrftoken = response.cookies.get("csrftoken")
