@@ -78,7 +78,7 @@ class Unfollower(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     target_user_id = Column(Integer, ForeignKey("unfollower_user.id", ondelete="CASCADE"), nullable=False)
-    username = Column(String(32), nullable=False)
+    username = Column(String(32), nullable=True)
     nickname = Column(Text, nullable=True)
 
     target_user = relationship("UnfollowerUser", back_populates="unfollowers")

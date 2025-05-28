@@ -42,6 +42,9 @@ class Database():
 
     def search_instagram_accounts(self, session: Session) -> List[InstagramAccount]:
         return session.query(InstagramAccount).filter_by(enabled=True).all()
+    
+    def delete_all_unfollowers(self, session: Session, user_id: int):
+        session.query(Unfollower).filter_by(target_user_id=user_id).delete()
 
     def save_unfollowers(self, session: Session, unfollowers: List[Unfollower]):
         session.bulk_save_objects(unfollowers)
