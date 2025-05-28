@@ -2,7 +2,6 @@ import requests
 import json
 import os
 from time import sleep
-from urllib.parse import urlencode
 from typing import Dict, List
 from instagrapi.types import Media, Comment, UserShort
 from instagrapi import Client
@@ -169,9 +168,9 @@ class Insta:
         count = 0
         sleep_amount = 5
         while True:
-            if count > sleep_amount:
+            if count % sleep_amount == 0:
+                self.log.info(f"=== 10초간 휴식 ===")
                 sleep(10)
-                count = 0
             if end_cursor:
                 variables["after"] = end_cursor
             if csrftoken:
@@ -197,10 +196,12 @@ class Insta:
                     continue
                 username = util.json_value(edge, "node", "username", default=None)
                 nickname = util.json_value(edge, "node", "full_name", default=None)
+                nickname = util.decode(nickname)
                 profile_uri = util.json_value(edge, "node", "profile_pic_url", default=None)
                 followed_by_viewer = util.json_value(edge, "node", "followed_by_viewer", default=False)
                 follows_viewer = util.json_value(edge, "node", "profile_pifollows_viewerc_url", default=False)
                 if followed_by_viewer and not follows_viewer:
+                    self.log.info(f"{user_id}의 {len(unfollowers)+1}번째 언팔로워: {username}")
                     unfollowers.append(Unfollower(target_user_id=target_user_id, username=username, nickname=nickname, profile_uri=profile_uri))
             end_cursor = page_info.get("end_cursor")
             if not page_info.get("has_next_page") or not end_cursor:
