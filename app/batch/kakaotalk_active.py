@@ -20,53 +20,36 @@ def main():
     db = Database()
     gpt = GPT()
     discord = Discord()
-
+    count = 0
+    
     try:
-        accounts = core.search_instagram_accounts()
-        if not accounts:
-            log.warning("실행할 인스타그램 계정이 없습니다.")
-            return
-        
-        for account in accounts:
-            account = InstagramAccount(id=account['id'], username=account['username'], session=account['session'])
-            if account.username != "doto.ri_":
+        insta = core.login_producer("doto.ri_")
+        targets = kakaotalk_parsing.parsing()
+        for target in targets:
+            count += 1
+            if insta.username in target.username:
                 continue
-            insta = Insta(account)
-            insta.login()
+            if count % 5 == 0:
+                log.info("1분 중단.")
+                sleep(60)
 
-            count = 0
-
-            try:
-                targets = kakaotalk_parsing.parsing()
-                for target in targets:
-                    count += 1
-                    if account.username in target.username:
-                        continue
-                    if count % 5 == 0:
-                        log.info("1분 중단.")
-                        sleep(60)
-
-                    link = target.link
-                    media_id = insta.get_media_id(link)
-                    if insta.exists_comment(media_id=media_id, username=account.username):
-                        continue
-                    media = insta.get_media(media_id)
-                    comment = gpt.generate_comment(media.caption_text)
-                    insta.comment(media_id, comment)
-                    insta.like(media_id)
-            except CommentError as e:
-                log.error(f"{account.id} 계정으로 {link} 댓글달기 실패.")
-                discord.send_message(f"{account.id} 계정으로 {link} 댓글달기 실패 [{e}]")
-            except LikeError as e:
-                log.error(f"{account.id} 계정으로 {link} 좋아요 실패.")
-                discord.send_message(f"{account.id} 계정으로 {link} 좋아요 실패 [{e}]")
-            except Exception as e:
-                log.error(f"{account.id} 계정으로 {link} 품앗이 실패.")
-                discord.send_message(f"{account.id} 계정으로 {link} 품앗이 실패 [{e}]")
+            link = target.link
+            media_id = insta.get_media_id(link)
+            if insta.exists_comment(media_id=media_id, username=insta.username):
+                continue
+            media = insta.get_media(media_id)
+            comment = gpt.generate_comment(media.caption_text)
+            insta.comment(media_id, comment)
+            insta.like(media_id)
+    except CommentError as e:
+        log.error(f"{insta.username} 계정으로 {link} 댓글달기 실패.")
+        discord.send_message(f"{insta.username} 계정으로 {link} 댓글달기 실패 [{e}]")
+    except LikeError as e:
+        log.error(f"{insta.username} 계정으로 {link} 좋아요 실패.")
+        discord.send_message(f"{insta.username} 계정으로 {link} 좋아요 실패 [{e}]")
     except Exception as e:
-        log.error(f"배치 실패: {e}")
-        discord.send_message(message=f"배치 실패: {e}")
-        sys.exit(1)
+        log.error(f"{insta.username} 계정으로 {link} 품앗이 실패.")
+        discord.send_message(f"{insta.username} 계정으로 {link} 품앗이 실패 [{e}]")
 
 if __name__ == "__main__":
     main()

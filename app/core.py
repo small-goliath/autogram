@@ -11,7 +11,6 @@ from app.exception.custom_exception import CommentError, LikeError, SearchCommen
 from app.gpt import GPT
 from app.insta import Insta
 from app.logger import get_logger
-from app.model.entity import Unfollower
 from app.util import get_formatted_today
 
 log = get_logger("auto_activer")
