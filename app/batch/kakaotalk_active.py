@@ -39,11 +39,13 @@ def main():
             try:
                 targets = kakaotalk_parsing.parsing()
                 for target in targets:
+                    count += 1
                     if account.username in target.username:
                         continue
                     if count % 5 == 0:
                         log.info("1분 중단.")
                         sleep(60)
+
                     link = target.link
                     media_id = insta.get_media_id(link)
                     if insta.exists_comment(media_id=media_id, username=account.username):
