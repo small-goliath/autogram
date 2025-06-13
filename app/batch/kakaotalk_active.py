@@ -21,7 +21,7 @@ def main():
     except Exception as e:
         log.error(f"품앗이를 할 수 없습니다.")
         discord.send_message(f"품앗이를 할 수 없습니다: [{e}]")
-        
+
         for target in targets:
             try:
                 count += 1
@@ -47,7 +47,7 @@ def main():
                 discord.send_message(f"{insta.username} 계정으로 {link} 좋아요 실패 [{e}]")
             except Exception as e:
                 log.error(f"{insta.username} 계정으로 {link} 품앗이 실패.")
-            discord.send_message(f"{insta.username} 계정으로 {link} 품앗이 실패 [{e}]")
+                discord.send_message(f"{insta.username} 계정으로 {link} 품앗이 실패 [{e}]")
 
 if __name__ == "__main__":
     main()
