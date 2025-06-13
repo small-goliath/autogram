@@ -94,4 +94,4 @@ if __name__ == "__main__":
     for username, links in username_links.items():
         log.info(f"{username}: {len(links)}개")
         for link in links:
-            log.info(f"  Link: {link}")
+            log.info(link)
