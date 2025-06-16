@@ -44,12 +44,13 @@ def parsing() -> list[ActionTarget]:
         chat = ""
         with open(kakaotalk_file, 'r', encoding='utf-8') as f:
             for line in f:
+                # chat += line
                 if is_last_week:
                     chat += line
                 if line.strip() == formatted_start:
                     is_last_week = True
-                elif line.strip() == end_date:
-                    is_last_week = False
+                elif line.strip() == formatted_end:
+                    break
 
         # 품앗이 대상 피드/릴스 캐치
         limit_by_weeks = os.environ.get("LIMIT_BY_WEEKS", "3")
@@ -62,7 +63,6 @@ def parsing() -> list[ActionTarget]:
         action_targets = []
         messages = message_pattern.findall(chat)
         for match in messages:
-            print(match)
             action_targets.append(ActionTarget(
                 username=match[0],
                 link=str(match[1]).strip(),

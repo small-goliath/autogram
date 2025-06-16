@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 from app.logger import get_logger
-from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Payment, Producer, Unfollower, UnfollowerUser
+from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Payment, Producer, SNSRaiseUser, UserActionVerification
 
 load_dotenv()
 database_url = os.environ.get('DATABASE_URL')
@@ -42,12 +42,6 @@ class Database():
 
     def search_instagram_accounts(self, session: Session) -> List[InstagramAccount]:
         return session.query(InstagramAccount).filter_by(enabled=True).all()
-    
-    def delete_all_unfollowers(self, session: Session, user_id: int):
-        session.query(Unfollower).filter_by(target_user_id=user_id).delete()
-
-    def save_unfollowers(self, session: Session, unfollowers: List[Unfollower]):
-        session.bulk_save_objects(unfollowers)
 
     def search_producers(self, session: Session) -> List[Producer]:
         return session.query(Producer).filter_by(enabled=True).all()
@@ -60,7 +54,10 @@ class Database():
     
     def search_payment(self, session: Session, username: str, year_month: str) -> Payment:
         return session.query(Payment).filter_by(username=username).filter_by(year_month=year_month).first()
-
-    def search_unfollower_users(self, session: Session) -> List[UnfollowerUser]:
-        unfollowerUsers = session.query(UnfollowerUser).filter_by(enabled=True).all()
-        return [{"id": unfollowerUser.id, "username": unfollowerUser.username} for unfollowerUser in unfollowerUsers]
+    
+    def search_sns_raise_users(self, session: Session) -> List[SNSRaiseUser]:
+        return session.query(SNSRaiseUser).all()
+    
+    def save_user_action_verification(self, session: Session, user_action_verifications: List[UserActionVerification]):
+        if user_action_verifications:
+            session.add_all(user_action_verifications)

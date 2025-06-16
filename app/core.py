@@ -1,9 +1,6 @@
-import json
-import os
 import sys
-from typing import List
+from typing import DefaultDict, List
 from instagrapi.types import Media
-from dotenv import load_dotenv
 
 from app.batch.notification import Discord
 from app.database import Database, read_only_transactional, transactional
@@ -11,6 +8,7 @@ from app.exception.custom_exception import CommentError, LikeError, SearchCommen
 from app.gpt import GPT
 from app.insta import Insta
 from app.logger import get_logger
+from app.model.entity import UserActionVerification
 from app.util import get_formatted_today
 
 log = get_logger("auto_activer")
@@ -112,32 +110,20 @@ def login_producer(username: str) -> Insta:
         except Exception as e:
             log.error(f"{producer.username} 로그인 실패: {e}")
             discord.send_message(f"{producer.username} 로그인 실패 [{e}]")
+            sys.exit(1)
 
         return producer_instagram
-    
-def save_unfollowers():
-    load_dotenv()
-    user_id_map = json.loads(os.getenv("USER_ID_MAP"))
-    admin_username = "_doto.ri_"
 
-    producer_instagram = login_producer(username=admin_username)
+def search_sns_raise_users() -> List[str]:
     with read_only_transactional() as session:
-        target_users = db.search_unfollower_users(session)
-        if not target_users:
-            log.warning("실행할 인스타그램 계정이 없습니다.")
-            return
-        
-    for target_user in target_users:
-        target_username = target_user['username']
-        try:
-            user_id = user_id_map[target_username]
-            unfollowers = producer_instagram.search_unfollowers(user_id)
-            
-            with transactional() as session:
-                db.delete_all_unfollowers(session=session, user_id=target_user['id'])
-                if unfollowers:
-                    db.save_unfollowers(session=session, unfollowers=unfollowers)
-        except Exception as e:
-            log.warning(f"{target_username} 언팔 조회 실패: {e}")
-            discord.send_message(f"{target_username} 언팔 조회 실패: {e}")
-            raise e
+        users = db.search_sns_raise_users(session)
+        return [user.username for user in users]
+    
+def save_user_action_verification(verified: DefaultDict[str, List[str]]):
+    with transactional() as session:
+        user_action_verifications = [
+            UserActionVerification(username, link)
+            for username, links in verified.items()
+            for link in links
+        ]
+        db.save_user_action_verification(session=session, user_action_verifications=user_action_verifications)

@@ -64,22 +64,17 @@ class Payment(Base):
     count = Column(Integer, default=0)
     year_month = Column(String(10), index=True)
 
-class UnfollowerUser(Base):
-    __tablename__ = "unfollower_user"
+####
+
+class SNSRaiseUser(Base):
+    __tablename__ = "sns_raise_user"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String(32), unique=True, nullable=False)
-    enabled = Column(Boolean, nullable=False, default=False)
-
-    unfollowers = relationship("Unfollower", back_populates="target_user", cascade="all, delete")
-
-class Unfollower(Base):
-    __tablename__ = "unfollower"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    target_user_id = Column(Integer, ForeignKey("unfollower_user.id", ondelete="CASCADE"), nullable=False)
     username = Column(String(32), nullable=True)
-    nickname = Column(Text, nullable=True)
-    profile_uri = Column(Text, nullable=True)
 
-    target_user = relationship("UnfollowerUser", back_populates="unfollowers")
+class UserActionVerification(Base):
+    __tablename__ = "user_action_verification"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(32), nullable=True)
+    link = Column(String(255))
