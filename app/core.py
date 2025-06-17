@@ -122,8 +122,9 @@ def search_sns_raise_users() -> List[str]:
 def save_user_action_verification(verified: DefaultDict[str, List[str]]):
     with transactional() as session:
         user_action_verifications = [
-            UserActionVerification(username, link)
+            UserActionVerification(username=username, link=link)
             for username, links in verified.items()
             for link in links
         ]
+
         db.save_user_action_verification(session=session, user_action_verifications=user_action_verifications)

@@ -60,4 +60,5 @@ class Database():
     
     def save_user_action_verification(self, session: Session, user_action_verifications: List[UserActionVerification]):
         if user_action_verifications:
+            # TODO: user_action_verifications 저장
             session.add_all(user_action_verifications)

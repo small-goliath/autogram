@@ -55,9 +55,10 @@ def main():
             discord.send_message(f"{link} 활동 내역 체크 실패 [{e}]")
 
     try:
-        core.save_user_action_verification(comment_result)
+        core.save_user_action_verification(verified=comment_result)
         discord.send_message("품앗이 활동내용 검증이 완료되었습니다.")
-    except:
+    except Exception as e:
+        log.warning(f"품앗이 검증 결과 저장 실패: {e}")
         message = ""
         for username, links in comment_result.items():
             message += f"\naccount: {username}\n"
