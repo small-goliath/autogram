@@ -1,3 +1,4 @@
+from collections import defaultdict
 import sys
 from typing import DefaultDict, List
 from instagrapi.types import Media
@@ -128,3 +129,18 @@ def save_user_action_verification(verified: DefaultDict[str, List[str]]):
         ]
 
         db.save_user_action_verification(session=session, user_action_verifications=user_action_verifications)
+
+def search_user_action_verifications() -> DefaultDict[str, List[str]]:
+    with read_only_transactional() as session:
+        verifications = db.search_user_action_verifications(session)
+        verifications_dict = defaultdict(list)
+
+        for verification in verifications:
+            verifications_dict[verification.link].append(verification.username)
+
+        return verifications_dict
+    
+def delete_user_action_verification(username: str, link: str):
+    with transactional() as session:
+        log.info(f"{username}이 {link}에 품앗이를 했습니다. 갱신합니다. 스르륵...")
+        db.delete_user_action_verification(session=session, verification=UserActionVerification(username=username, link=link))

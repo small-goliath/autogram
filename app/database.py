@@ -3,10 +3,9 @@ import os
 from typing import List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.exc import SQLAlchemyError
 from dotenv import load_dotenv
 from app.logger import get_logger
-from app.model.entity import Action, ActionTarget, Consumer, InstagramAccount, Payment, Producer, SNSRaiseUser, UserActionVerification
+from app.model.entity import Consumer, InstagramAccount, Payment, Producer, SNSRaiseUser, UserActionVerification
 
 load_dotenv()
 database_url = os.environ.get('DATABASE_URL')
@@ -60,5 +59,10 @@ class Database():
     
     def save_user_action_verification(self, session: Session, user_action_verifications: List[UserActionVerification]):
         if user_action_verifications:
-            # TODO: user_action_verifications 저장
             session.add_all(user_action_verifications)
+
+    def search_user_action_verifications(self, session: Session) -> List[UserActionVerification]:
+        return session.query(UserActionVerification).all()
+    
+    def delete_user_action_verification(self, session: Session, verification: UserActionVerification):
+        return session.query(UserActionVerification).filter_by(username=verification.username, link=verification.link).delete()

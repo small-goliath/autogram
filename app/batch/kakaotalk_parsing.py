@@ -18,12 +18,10 @@ def get_target_week_dates():
     today = get_today()
     last_monday = today - timedelta(days=today.weekday() + 7)
     this_monday = today - timedelta(days=today.weekday())
-    # last_monday = today - timedelta(days=today.weekday())
-    # this_monday = today + timedelta(days=1)
     return last_monday, this_monday
 
 def format_date(date):
-    return date.strftime("--------------- %Y년 %-m월 %-d일 %A ---------------")
+    return date.strftime("%Y년 %-m월 %-d일 %A")
 
 def parsing() -> list[ActionTarget]:
     kakaotalk_file = "kakaotalk/KakaoTalk_latest.txt"
@@ -52,11 +50,23 @@ def parsing() -> list[ActionTarget]:
                 elif line.strip() == formatted_end:
                     break
 
+
+        # limit_by_weeks = os.environ.get("LIMIT_BY_WEEKS", "3")
         # 품앗이 대상 피드/릴스 캐치
-        limit_by_weeks = os.environ.get("LIMIT_BY_WEEKS", "3")
         message_pattern = re.compile(
-            r"\[(.*?)\].\[(?:.*?)\]\n*?[^\[\]]*(https://www\.instagram\.com[^\s]*)\n*[^\[\]]*/(?P<digit>\d+)",
-            re.MULTILINE
+            r"""^
+            (20\d{2}\.\s*\d{1,2}\.\s*\d{1,2})         # 날짜
+            (?:.*?)                                     # 0개 이상의 문자
+            ,\s                                       # 콤마와 공백
+            (.*?)                                     # 닉네임
+            \s*:\s                                    # 공백과 콜론
+            (?:(?!20\d{2}\.\s*\d{1,2}\.\s*\d{1,2}).)*?  # 날짜가 아닌 0개 이상의 문자열
+            (https://www\.instagram\.com/[^\s\n]+)    # 인스타그램 링크
+            \n+                                       # 1개 이상의 줄바꿈
+            (?:(?!20\d{2}\.\s*\d{1,2}\.\s*\d{1,2}).)*?  # 날짜가 아닌 0개 이상의 문자열
+            /(?P<digit>\d+)
+            """,
+            re.MULTILINE | re.VERBOSE
         )
 
         # 인스타그램 링크 맵핑
@@ -64,8 +74,8 @@ def parsing() -> list[ActionTarget]:
         messages = message_pattern.findall(chat)
         for match in messages:
             action_targets.append(ActionTarget(
-                username=match[0],
-                link=str(match[1]).strip(),
+                username=match[1],
+                link=str(match[2]).strip(),
                 monday=start_date.strftime("%Y-%m-%d"),
                 sunday=(end_date - timedelta(days=1)).strftime("%Y-%m-%d")
             ))
@@ -80,7 +90,7 @@ def parsing() -> list[ActionTarget]:
         if os.path.exists(kakaotalk_file):
             last_sunday_date = end_date.strftime("%Y-%m-%d")
             new_filename = f"kakaotalk/KakaoTalk_{last_sunday_date}.txt"
-            # os.rename(kakaotalk_file, new_filename)
+            os.rename(kakaotalk_file, new_filename)
 
 if __name__ == "__main__":
     log.info("Parsing KakaoTalk chat history...")

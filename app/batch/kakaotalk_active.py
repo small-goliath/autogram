@@ -27,7 +27,7 @@ def main():
     for target in targets:
         try:
             count += 1
-            if insta.username in target.username:
+            if insta.username in str(target.username).split('@')[-1]:
                 continue
             if count % 5 == 0:
                 log.info("1분 중단.")

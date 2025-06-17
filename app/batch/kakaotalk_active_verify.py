@@ -1,7 +1,6 @@
 from collections import defaultdict
 from time import sleep
 from typing import List
-import sys
 
 import app.core as core
 from app.batch import kakaotalk_parsing
@@ -29,7 +28,7 @@ def main():
     for target_post in target_posts:
         link = None
         try:
-            if insta.username == target_post.username:
+            if insta.username == str(target_post.username).split('@')[-1]:
                 continue
 
             if count != 0 and count % 5 == 0:
@@ -45,6 +44,11 @@ def main():
             comment_usernames = set(comment.user.username for comment in comments)
 
             for target_username in target_users:
+                if "mingsoo_" in target_username or "assom0325" in target_username or "innissue_" in target_username or "toofriendship" in target_username or "jo0o_m" in target_username:
+                    continue
+
+
+
                 if target_username == writer_username:
                     continue
                 if target_username not in comment_usernames:
