@@ -8,6 +8,6 @@ do
     pip install -r requirements.txt
     echo "kakaotalk file update!!!"
     date
-    python3 -m app.batch.kakaotalk_active_verify
+    python3 -m app.batch.kakaotalk_active_verifyd
     python3 -m app.batch.kakaotalk_active
 done
