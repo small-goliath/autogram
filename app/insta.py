@@ -1,15 +1,13 @@
-import requests
 import json
 import os
 from time import sleep
-from typing import Dict, List
-from instagrapi.types import Media, Comment, UserShort
+from typing import List
+from instagrapi.types import Media, Comment
 from instagrapi import Client
 from app.batch.notification import Discord
-from app.exception.custom_exception import CommentError, FollowersError, FollowingsError, LikeError, SearchCommentError
+from app.exception.custom_exception import CommentError, LikeError, SearchCommentError
 from app.model.entity import Producer
 from app.logger import get_logger
-import app.util as util
 
 class Insta:
     def __init__(self, account: Producer):
