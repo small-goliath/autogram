@@ -44,7 +44,7 @@ def main():
     else:
         for item in items:
             file_id = item['id']
-            file_name = "TEST.txt"
+            file_name = "KakaoTalk_latest.txt"
             request = service.files().get_media(fileId=file_id)
             fh = io.FileIO(os.path.join(SAVE_DIR, file_name), 'wb')
             downloader = MediaIoBaseDownload(fh, request)
