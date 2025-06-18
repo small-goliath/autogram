@@ -28,15 +28,9 @@ class Insta:
             else:
                 self.client.set_settings(self.session)
             
-            # self.client.login(username="_doto.ri_", password="DAoddlsduD1004!")
             self.log.info(f"===== {self.username}으로 로그인하였습니다. =====")
         except Exception as e:
             self.log.warning(f"{self.username} 계정을 로그인할 수 없습니다: {e}")
-
-            old_session = self.client.get_settings()
-            self.client.set_settings({})
-            self.client.set_uuids(old_session["uuids"])
-            self.client.login(username="_doto.ri_", password="DAoddlsduD1004!")
 
             message = "인스타그램 로그인 실패"
             embeds = [

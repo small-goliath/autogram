@@ -1,10 +1,14 @@
+import os
 from time import sleep
+from dotenv import load_dotenv
 
 import app.core as core
 from app.batch.notification import Discord
 from app.logger import get_logger
 
 log = get_logger("auto_activer")
+load_dotenv()
+INSTAGRAM_ADMIN = os.environ.get('INSTAGRAM_ADMIN')
 
 # 카카오톡 채팅방 대화내용으로부터 활동내용 갱신
 def main():
@@ -12,7 +16,7 @@ def main():
     count = 0
     
     try:
-        insta = core.login_producer("_doto.ri_")
+        insta = core.login_producer(INSTAGRAM_ADMIN)
         verifications = core.search_user_action_verifications()
     except Exception as e:
         log.error(f"활동 내역을 갱신할 수 없습니다.")

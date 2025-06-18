@@ -1,6 +1,8 @@
 from collections import defaultdict
+import os
 from time import sleep
 from typing import List
+from dotenv import load_dotenv
 
 import app.core as core
 from app.batch import kakaotalk_parsing
@@ -9,6 +11,8 @@ from app.logger import get_logger
 from app.model.entity import ActionTarget
 
 log = get_logger("auto_activer")
+load_dotenv()
+INSTAGRAM_ADMIN = os.environ.get('INSTAGRAM_ADMIN')
 
 # 카카오톡 채팅방 대화내용으로부터 활동내용 피드백
 def main():
@@ -16,7 +20,7 @@ def main():
     count = 0
     
     try:
-        insta = core.login_producer("_doto.ri_")
+        insta = core.login_producer(INSTAGRAM_ADMIN)
         target_posts: List[ActionTarget] = kakaotalk_parsing.parsing()
         target_users = core.search_sns_raise_users()
     except Exception as e:
