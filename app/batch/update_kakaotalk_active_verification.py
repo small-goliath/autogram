@@ -25,9 +25,13 @@ def main():
     log.info(f"{len(verifications)}개에 대한 품앗이 활동 내용을 갱신합니다.")
 
     for link, usernames in verifications.items():
-        media_id = insta.get_media_id(link)
-        comments = insta.search_comments(media_id)
-        comment_usernames = set(comment.user.username for comment in comments)
+        try:
+            media_id = insta.get_media_id(link)
+            comments = insta.search_comments(media_id)
+            comment_usernames = set(comment.user.username for comment in comments)
+        except Exception as e:
+                log.error(f"{username}의 {link} 정보 조회 실패: {e}")
+                discord.send_message(f"{username}의 {link} 활동 정보 조회 실패 [{e}]")
 
         for username in usernames:
             try:
