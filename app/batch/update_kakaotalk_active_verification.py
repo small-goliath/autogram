@@ -30,8 +30,9 @@ def main():
             comments = insta.search_comments(media_id)
             comment_usernames = set(comment.user.username for comment in comments)
         except Exception as e:
-                log.error(f"{username}의 {link} 정보 조회 실패: {e}")
-                discord.send_message(f"{username}의 {link} 활동 정보 조회 실패 [{e}]")
+                log.error(f"{link} 정보 조회 실패: {e}")
+                discord.send_message(f"{link} 활동 정보 조회 실패 [{e}]")
+                continue
 
         for username in usernames:
             try:
