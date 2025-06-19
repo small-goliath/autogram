@@ -76,11 +76,13 @@ class Insta:
                 count += 1
                 comments_part, next_min_id = self.client.media_comments_chunk(media_id=media_id, max_amount=10, min_id=next_min_id)
                 comments.extend(comments_part)
+                self.log.info("5초 중단.")
+                sleep(5)
                 if not next_min_id:
                     break
                 if count % 5 == 0:
-                    sleep(10)
                     self.log.info("10초 중단.")
+                    sleep(10)
             return comments
         except Exception as e:
             self.log.error(f"{media_id} 댓글 조회 중 오류 발생: {e}")

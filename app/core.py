@@ -96,7 +96,7 @@ def action():
                 count = process_feeds(producer_instagram, target_feeds[consumer_username])
                 set_payment(consumer_username, count)
             except Exception as e:
-                log.warning(f"{producer_instagram}계정으로 {consumer_username} 액션 실패: {e}")
+                log.warning(f"{producer_instagram.username}계정으로 {consumer_username} 액션 실패: {e}")
 
 def login_producer(username: str) -> Insta:
     with transactional() as session:
