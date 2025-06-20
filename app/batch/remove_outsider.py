@@ -24,6 +24,7 @@ def main():
         discord.send_message(f"활동 중단한 이용자 링크 제거할 수 없습니다: [{e}]")
 
     log.info(f"{len(verifications)}개에 대한 링크를 수집합니다.")
+    log.info(f"탈퇴자: {OUTSIDERS}")
 
     for link, _ in verifications.items():
         try:
