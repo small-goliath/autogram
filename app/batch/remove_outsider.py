@@ -36,10 +36,10 @@ def main():
                 log.error(f"{link} 정보 조회 실패: {e}")
                 discord.send_message(f"{link} 정보 조회 실패 [{e}]")
                 continue
-        if count != 0 and count % 5 == 0:
-            log.info("10ch 중단.")
+        count += 1
+        if count % 5 == 0:
+            log.info("10초 중단.")
             sleep(10)
-            count += 1
 
 if __name__ == "__main__":
     main()
