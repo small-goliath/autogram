@@ -1,6 +1,6 @@
 from collections import defaultdict
 import sys
-from typing import DefaultDict, List
+from typing import DefaultDict, List, Optional
 from instagrapi.types import Media
 
 from app.batch.notification import Discord
@@ -140,7 +140,11 @@ def search_user_action_verifications() -> DefaultDict[str, List[str]]:
 
         return verifications_dict
     
-def delete_user_action_verification(username: str, link: str):
+def delete_user_action_verification(username: Optional[str] = None, link: str = None):
     with transactional() as session:
-        log.info(f"{username}이 {link}에 품앗이를 했습니다. 갱신합니다. 스르륵...")
-        db.delete_user_action_verification(session=session, verification=UserActionVerification(username=username, link=link))
+        if username:
+            log.info(f"{username}이 {link}에 품앗이를 했습니다. 갱신합니다. 스르륵...")
+        else:
+            log.info(f"{link}는 탈퇴자 링크입니다. 삭제합니다. 스르륵...")
+        deleted_count = db.delete_user_action_verification(session=session, username=username, link=link)
+        log.info(f"삭제된 row 수: {deleted_count}")

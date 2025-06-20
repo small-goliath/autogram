@@ -48,6 +48,7 @@ class Insta:
         return  self.client.media_id(media_pk)
 
     def get_media(self, media_id: str) -> Media:
+        self.log.info(f"{media_id}의 정보를 조회합니다.")
         return self.client.media_info(media_id)
     
     def comment(self, media_id: str, comment: str):

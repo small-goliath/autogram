@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import os
-from typing import List
+from typing import List, Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
@@ -64,5 +64,20 @@ class Database():
     def search_user_action_verifications(self, session: Session) -> List[UserActionVerification]:
         return session.query(UserActionVerification).all()
     
-    def delete_user_action_verification(self, session: Session, verification: UserActionVerification):
-        return session.query(UserActionVerification).filter_by(username=verification.username, link=verification.link).delete()
+    def delete_user_action_verification(
+        self,
+        session: Session, 
+        username: Optional[str] = None, 
+        link: Optional[str] = None
+    ) -> int:
+        query = session.query(UserActionVerification)
+        filters = {}
+        if username:
+            filters['username'] = username
+        if link:
+            filters['link'] = link
+        if not filters:
+            raise ValueError("username와 link 모두 값이 없습니다.")
+        deleted_count = query.filter_by(**filters).delete()
+        session.commit()
+        return deleted_count

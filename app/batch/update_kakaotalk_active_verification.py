@@ -42,7 +42,7 @@ def main():
                 count += 1
 
                 if username in comment_usernames:
-                    core.delete_user_action_verification(username, link)
+                    core.delete_user_action_verification(username=username, link=link)
 
             except Exception as e:
                 log.error(f"{username}의 {link} 활동 내역 갱신 실패: {e}")
