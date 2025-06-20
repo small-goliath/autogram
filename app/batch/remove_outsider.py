@@ -29,7 +29,6 @@ def main():
         try:
             media_id = insta.get_media_id(link)
             media = insta.get_media(media_id)
-            OUTSIDERS = []
             if media.user.username in OUTSIDERS:
                 core.delete_user_action_verification(link=link)
         except Exception as e:
