@@ -46,8 +46,11 @@ def set_payment(username: str, count: int):
     with transactional() as session:
         payment = db.search_payment(session=session, username=username, year_month=today)
         log.info(f"{username}의 count를 {count}만큼 더합니다.")
-        payment.count += count
-        session.add(payment)
+        if payment:
+            payment.count += count
+            session.add(payment)
+        else:
+            db.create_payment(username=username, count=count, year_month=today)
 
 def process_feeds(producer_instagram: Insta, feeds: List[Media]) -> int:
     count = 0

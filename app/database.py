@@ -54,6 +54,10 @@ class Database():
     def search_payment(self, session: Session, username: str, year_month: str) -> Payment:
         return session.query(Payment).filter_by(username=username).filter_by(year_month=year_month).first()
     
+    def create_payment(self, session: Session, username: str, count: int, year_month: str) -> Payment:
+        paument = Payment(username=username, count=count, year_month=year_month)
+        return session.add(paument)
+    
     def search_sns_raise_users(self, session: Session) -> List[SNSRaiseUser]:
         return session.query(SNSRaiseUser).all()
     
