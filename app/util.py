@@ -1,6 +1,9 @@
 import locale
 import codecs
 from datetime import datetime, timedelta, timezone
+import os
+from typing import List
+from dotenv import load_dotenv
 
 def get_today() -> datetime:
     locale.setlocale(locale.LC_TIME, 'ko_KR.UTF-8')
@@ -30,3 +33,8 @@ def decode(raw_data, default: str = None) -> str:
         return codecs.decode(raw_data, 'unicode_escape').encode('latin1').decode('utf-8')
     except :
         return default
+    
+def getOutsiders() -> List[str]:
+    load_dotenv()
+    return [item.strip() for item in os.getenv('OUTSIDERS', '').split(',') if item.strip()]
+    
