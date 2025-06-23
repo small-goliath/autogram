@@ -9,6 +9,7 @@ from app.batch import kakaotalk_parsing
 from app.batch.notification import Discord
 from app.logger import get_logger
 from app.model.entity import ActionTarget
+from app.util import getOutsiders
 
 log = get_logger("auto_activer")
 load_dotenv()
@@ -43,6 +44,9 @@ def main():
             link = target_post.link
             media_id = insta.get_media_id(link)
             writer_username = insta.get_media(media_id).user.username
+            outsiders = getOutsiders()
+            if writer_username in outsiders:
+                continue
             comments = insta.search_comments(media_id)
 
             comment_usernames = set(comment.user.username for comment in comments)
