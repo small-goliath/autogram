@@ -61,9 +61,13 @@ class Database():
     def search_sns_raise_users(self, session: Session) -> List[SNSRaiseUser]:
         return session.query(SNSRaiseUser).all()
     
-    def save_user_action_verification(self, session: Session, user_action_verifications: List[UserActionVerification]):
+    def save_user_action_verifications(self, session: Session, user_action_verifications: List[UserActionVerification]):
         if user_action_verifications:
             session.add_all(user_action_verifications)
+
+    def save_user_action_verification(self, session: Session, user_action_verification: UserActionVerification):
+        if user_action_verification:
+            session.add(user_action_verification)
 
     def search_user_action_verifications(self, session: Session) -> List[UserActionVerification]:
         return session.query(UserActionVerification).all()

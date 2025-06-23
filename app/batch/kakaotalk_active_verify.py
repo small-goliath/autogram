@@ -29,7 +29,6 @@ def main():
         discord.send_message(f"지난주 활동 내역을 체크할 수 없습니다: [{e}]")
 
     log.info(f"{len(target_posts)}개에 대한 품앗이 활동 내용을 체크합니다.")
-    comment_result = defaultdict(list)
     for target_post in target_posts:
         link = None
         try:
@@ -52,36 +51,18 @@ def main():
             comment_usernames = set(comment.user.username for comment in comments)
 
             for target_username in target_users:
-                if "mingsoo_" in target_username or "assom0325" in target_username or "innissue_" in target_username or "toofriendship" in target_username or "jo0o_m" in target_username:
-                    continue
-
-
-
                 if target_username == writer_username:
                     continue
                 if target_username not in comment_usernames:
-                    comment_result[target_username].append(link)
+                    try:
+                        core.save_user_action_verification(username=target_username, link=link)
+                    except:
+                        log.error(f"{target_username}이 {link} 품앗이를 하지 않았다: {e}")
 
         except Exception as e:
             log.error(f"{link} 활동 내역 체크 실패: {e}")
             discord.send_message(f"{link} 활동 내역 체크 실패 [{e}]")
-
-    try:
-        core.save_user_action_verification(verified=comment_result)
-        discord.send_message("품앗이 활동내용 검증이 완료되었습니다.")
-    except Exception as e:
-        log.warning(f"품앗이 검증 결과 저장 실패: {e}")
-        message = ""
-        for username, links in comment_result.items():
-            message += f"\naccount: {username}\n"
-            for link in links:
-                message += f"{link}\n"
-
-        if message:
-            log.info("================================== 품앗이 활동 내역 조회 ==================================")
-            log.info(message)
-            log.info("======================================================================================")
-            discord.send_message(message)
+    discord.send_message("품앗이 활동내용 검증이 완료되었습니다.")
 
 if __name__ == "__main__":
     main()

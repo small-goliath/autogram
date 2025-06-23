@@ -123,7 +123,7 @@ def search_sns_raise_users() -> List[str]:
         users = db.search_sns_raise_users(session)
         return [user.username for user in users]
     
-def save_user_action_verification(verified: DefaultDict[str, List[str]]):
+def save_user_action_verifications(verified: DefaultDict[str, List[str]]):
     with transactional() as session:
         user_action_verifications = [
             UserActionVerification(username=username, link=link)
@@ -131,7 +131,13 @@ def save_user_action_verification(verified: DefaultDict[str, List[str]]):
             for link in links
         ]
 
-        db.save_user_action_verification(session=session, user_action_verifications=user_action_verifications)
+        db.save_user_action_verifications(session=session, user_action_verifications=user_action_verifications)
+
+def save_user_action_verification(username: str, link: str):
+    with transactional() as session:
+        user_action_verification = UserActionVerification(username=username, link=link)
+
+        db.save_user_action_verification(session=session, user_action_verification=user_action_verification)
 
 def search_user_action_verifications() -> DefaultDict[str, List[str]]:
     with read_only_transactional() as session:
