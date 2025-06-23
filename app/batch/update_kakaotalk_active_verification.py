@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import app.core as core
 from app.batch.notification import Discord
 from app.logger import get_logger
+from app.util import sleep_by_count
 
 log = get_logger("auto_activer")
 load_dotenv()
@@ -36,10 +37,8 @@ def main():
 
         for username in usernames:
             try:
-                if count != 0 and count % 5 == 0:
-                    log.info("1분 중단.")
-                    sleep(60)
                 count += 1
+                sleep_by_count(count=count, amount=5, sec=60)
 
                 if username in comment_usernames:
                     core.delete_user_action_verification(username=username, link=link)

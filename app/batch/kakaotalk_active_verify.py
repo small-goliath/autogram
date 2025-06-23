@@ -9,7 +9,7 @@ from app.batch import kakaotalk_parsing
 from app.batch.notification import Discord
 from app.logger import get_logger
 from app.model.entity import ActionTarget
-from app.util import getOutsiders
+from app.util import get_outsiders, sleep_by_count
 
 log = get_logger("auto_activer")
 load_dotenv()
@@ -35,15 +35,13 @@ def main():
             if insta.username == str(target_post.username).split('@')[-1]:
                 continue
 
-            if count != 0 and count % 5 == 0:
-                log.info("1분 중단.")
-                sleep(60)
             count += 1
+            sleep_by_count(count=count, amount=5, sec=60)
 
             link = target_post.link
             media_id = insta.get_media_id(link)
             writer_username = insta.get_media(media_id).user.username
-            outsiders = getOutsiders()
+            outsiders = get_outsiders()
             if writer_username in outsiders:
                 continue
             comments = insta.search_comments(media_id)

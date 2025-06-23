@@ -8,6 +8,7 @@ from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, LikeError, SearchCommentError
 from app.model.entity import Producer
 from app.logger import get_logger
+from app.util import sleep_by_count
 
 class Insta:
     def __init__(self, account: Producer):
@@ -81,9 +82,7 @@ class Insta:
                 sleep(5)
                 if not next_min_id:
                     break
-                if count % 5 == 0:
-                    self.log.info("10초 중단.")
-                    sleep(10)
+                sleep_by_count(count=count, amount=5, sec=10)
             return comments
         except Exception as e:
             self.log.error(f"{media_id} 댓글 조회 중 오류 발생: {e}")

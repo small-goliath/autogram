@@ -2,8 +2,13 @@ import locale
 import codecs
 from datetime import datetime, timedelta, timezone
 import os
+from time import sleep
 from typing import List
 from dotenv import load_dotenv
+
+from app.logger import get_logger
+
+log = get_logger("root")
 
 def get_today() -> datetime:
     locale.setlocale(locale.LC_TIME, 'ko_KR.UTF-8')
@@ -34,7 +39,11 @@ def decode(raw_data, default: str = None) -> str:
     except :
         return default
     
-def getOutsiders() -> List[str]:
+def get_outsiders() -> List[str]:
     load_dotenv()
     return [item.strip() for item in os.getenv('OUTSIDERS', '').split(',') if item.strip()]
     
+def sleep_by_count(count: int, amount: int, sec: int):
+    if count % amount == 0:
+        log.info(f"{sec}초 중단.")
+        sleep(sec)

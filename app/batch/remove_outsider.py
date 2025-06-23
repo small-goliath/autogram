@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import app.core as core
 from app.batch.notification import Discord
 from app.logger import get_logger
-from app.util import getOutsiders
+from app.util import get_outsiders, sleep_by_count
 
 log = get_logger("auto_activer")
 load_dotenv()
@@ -24,7 +24,7 @@ def main():
         discord.send_message(f"활동 중단한 이용자 링크 제거할 수 없습니다: [{e}]")
 
     log.info(f"{len(verifications)}개에 대한 링크를 수집합니다.")
-    outsiders = getOutsiders()
+    outsiders = get_outsiders()
     log.info(f"탈퇴자: {outsiders}")
 
     for link, _ in verifications.items():
@@ -38,9 +38,7 @@ def main():
                 discord.send_message(f"{link} 정보 조회 실패 [{e}]")
                 continue
         count += 1
-        if count % 5 == 0:
-            log.info("10초 중단.")
-            sleep(10)
+        sleep_by_count(count=count, amount=5, sec=10)
 
 if __name__ == "__main__":
     main()
