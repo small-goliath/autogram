@@ -56,7 +56,8 @@ def main():
                 if target_username not in comment_usernames:
                     try:
                         core.save_user_action_verification(username=target_username, link=link)
-                    except:
+                    except Exception as e:
+                        discord.send_message(f"{target_username}이 {link} 품앗이를 하지 않았다.")
                         log.error(f"{target_username}이 {link} 품앗이를 하지 않았다: {e}")
 
         except Exception as e:
