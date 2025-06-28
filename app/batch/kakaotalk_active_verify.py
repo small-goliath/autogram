@@ -8,7 +8,7 @@ import app.core as core
 from app.batch import kakaotalk_parsing
 from app.batch.notification import Discord
 from app.logger import get_logger
-from app.model.entity import ActionTarget
+from app.model.model import ActionTarget
 from app.util import get_outsiders, sleep_by_count
 
 log = get_logger("auto_activer")

@@ -4,9 +4,9 @@ import re
 import sys
 import locale
 from datetime import timedelta
-from app.model.entity import ActionTarget
 from app.logger import get_logger
 from app.batch.notification import Discord
+from app.model.model import ActionTarget
 from app.util import get_today
 
 # 카카오톡 대화내용 파싱
@@ -75,9 +75,7 @@ def parsing() -> list[ActionTarget]:
         for match in messages:
             action_targets.append(ActionTarget(
                 username=match[1],
-                link=str(match[2]).strip(),
-                monday=start_date.strftime("%Y-%m-%d"),
-                sunday=(end_date - timedelta(days=1)).strftime("%Y-%m-%d")
+                link=str(match[2]).strip()
             ))
 
         return action_targets

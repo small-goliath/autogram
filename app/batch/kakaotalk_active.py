@@ -7,7 +7,7 @@ from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, LikeError
 from app.gpt import GPT
 from app.logger import get_logger
-from app.model.entity import ActionTarget
+from app.model.model import ActionTarget
 from app.util import get_outsiders, sleep_by_count
 
 log = get_logger("auto_activer")

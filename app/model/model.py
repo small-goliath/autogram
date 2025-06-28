@@ -1,8 +1,5 @@
 from pydantic.main import BaseModel
 
-class InstagramAccount(BaseModel):
-    id: str
+class ActionTarget(BaseModel):
     username: str
-    password: str
-    enabled: boolean
-    session: str
+    link: str

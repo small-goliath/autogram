@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 from app.logger import get_logger
-from app.model.entity import Consumer, InstagramAccount, Payment, Producer, SNSRaiseUser, UserActionVerification
+from app.model.entity import Consumer, Payment, Producer, SNSRaiseUser, UserActionVerification
 
 load_dotenv()
 database_url = os.environ.get('DATABASE_URL')
@@ -35,12 +35,6 @@ def read_only_transactional():
 class Database():
     def __init__(self):
         self.log = get_logger("root")
-
-    def search_instagram_account(self, session: Session, username: str) -> InstagramAccount:
-        return session.query(InstagramAccount).filter_by(username=username).first()
-
-    def search_instagram_accounts(self, session: Session) -> List[InstagramAccount]:
-        return session.query(InstagramAccount).filter_by(enabled=True).all()
 
     def search_producers(self, session: Session) -> List[Producer]:
         return session.query(Producer).filter_by(enabled=True).all()
