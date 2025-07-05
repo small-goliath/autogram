@@ -5,3 +5,6 @@ class CommentError(Exception):
 
 class LikeError(Exception):
     pass
+
+class LoginError(Exception):
+    pass
