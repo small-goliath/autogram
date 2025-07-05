@@ -9,15 +9,17 @@ from app.util import sleep_by_count
 
 log = get_logger("auto_activer")
 load_dotenv()
-INSTAGRAM_ADMIN = os.environ.get('INSTAGRAM_ADMIN')
+FIRST_INSTAGRAM_ADMIN = os.environ.get('FIRST_INSTAGRAM_ADMIN')
+SECOND_INSTAGRAM_ADMIN = os.environ.get('SECOND_INSTAGRAM_ADMIN')
 
 # 카카오톡 채팅방 대화내용으로부터 활동내용 갱신
 def main():
     discord = Discord()
     count = 0
+    challenge_required_count = 0
     
     try:
-        insta = core.login_producer(INSTAGRAM_ADMIN)
+        insta = core.login_producer(FIRST_INSTAGRAM_ADMIN)
         verifications = core.search_user_action_verifications()
     except Exception as e:
         log.error(f"활동 내역을 갱신할 수 없습니다.")
@@ -31,8 +33,14 @@ def main():
             comments = insta.search_comments(media_id)
             comment_usernames = set(comment.user.username for comment in comments)
         except Exception as e:
+            if challenge_required_count > 0:
                 log.error(f"{link} 정보 조회 실패: {e}")
                 discord.send_message(f"{link} 활동 정보 조회 실패 [{e}]")
+                break
+
+            if "challenge_required" in str(e):
+                challenge_required_count += 1
+                insta = core.login_producer(SECOND_INSTAGRAM_ADMIN)
                 continue
 
         for username in usernames:

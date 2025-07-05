@@ -13,15 +13,17 @@ from app.util import get_outsiders, sleep_by_count
 
 log = get_logger("auto_activer")
 load_dotenv()
-INSTAGRAM_ADMIN = os.environ.get('INSTAGRAM_ADMIN')
+FIRST_INSTAGRAM_ADMIN = os.environ.get('FIRST_INSTAGRAM_ADMIN')
+SECOND_INSTAGRAM_ADMIN = os.environ.get('SECOND_INSTAGRAM_ADMIN')
 
 # 카카오톡 채팅방 대화내용으로부터 활동내용 피드백
 def main():
     discord = Discord()
     count = 0
-    
+    challenge_required_count = 0
+
     try:
-        insta = core.login_producer(INSTAGRAM_ADMIN)
+        insta = core.login_producer(FIRST_INSTAGRAM_ADMIN)
         target_posts: List[ActionTarget] = kakaotalk_parsing.parsing()
         target_users = core.search_sns_raise_users()
     except Exception as e:
@@ -59,8 +61,15 @@ def main():
                         log.error(f"{target_username}이 {link} 품앗이를 하지 않았다: {e}")
 
         except Exception as e:
-            log.error(f"{link} 활동 내역 체크 실패: {e}")
-            discord.send_message(f"{link} 활동 내역 체크 실패 [{e}]")
+            if challenge_required_count > 0:
+                log.error(f"{link} 활동 내역 체크 실패: {e}")
+                discord.send_message(f"{link} 활동 내역 체크 실패 [{e}]")
+                break
+
+            if "challenge_required" in str(e):
+                challenge_required_count += 1
+                insta = core.login_producer(SECOND_INSTAGRAM_ADMIN)
+                continue
     discord.send_message("품앗이 활동내용 검증이 완료되었습니다.")
 
 if __name__ == "__main__":
