@@ -77,6 +77,8 @@ def main():
                     log.error(f"{link} 활동 내용 체크 실패: {e}")
                     discord.send_message(f"{link} 활동 내역 체크 실패 [{e}]")
                     break
+            log.warning(f"활동 내용 체크 실패: {e}")
+            
     discord.send_message("품앗이 활동내용 검증이 완료되었습니다.")
 
 if __name__ == "__main__":

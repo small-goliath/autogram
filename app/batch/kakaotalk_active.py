@@ -22,7 +22,7 @@ def main():
     core = AutogramCore()
 
     try:
-        insta = core.login_producer("doto.ri_")
+        insta = core.login_producer(username="doto.ri_")
         targets = kakaotalk_parsing.parsing()
     except Exception as e:
         log.error(f"품앗이를 할 수 없습니다.")
