@@ -1,6 +1,7 @@
 #!/bin/bash
 
-WATCH_FILE="./kakaotalk/KakaoTalk_latest.txt"
+WATCH_FILE="/home/sch/autogram/kakaotalk/KakaoTalk_latest.txt"
+cd /home/sch/autogram
 source .venv/bin/activate
 
 inotifywait -m -e create,modify "${WATCH_FILE}" | while read FILE
