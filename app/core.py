@@ -42,6 +42,22 @@ class AutogramCore:
                     continue
 
             return producer_instagrams
+    def login_producer(self, username: str) -> Insta:
+        with transactional() as session:
+            producer = self.db.search_producer(username=username, session=session)
+            if not producer:
+                self.log.warning("실행할 인스타그램 계정이 없습니다.")
+                sys.exit(0)
+            
+            producer_instagram = Insta(producer)
+            try:
+                producer_instagram.login()
+            except Exception as e:
+                self.log.error(f"{producer.username} 로그인 실패: {e}")
+                self.discord.send_message(f"{producer.username} 로그인 실패 [{e}]")
+                sys.exit(1)
+
+            return producer_instagram
         
     def get_consumers(self) -> List[str]:
         with read_only_transactional() as session:

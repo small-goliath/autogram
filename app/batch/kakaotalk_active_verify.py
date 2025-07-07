@@ -41,10 +41,11 @@ def verify(insta: Insta, link: str, target_users: List[str]):
 def main():
     count = 0
     challenge_required_count = 0
+    target_posts: List[ActionTarget] = []
 
     try:
         insta = core.login_producer(FIRST_INSTAGRAM_ADMIN)
-        target_posts: List[ActionTarget] = kakaotalk_parsing.parsing()
+        target_posts = kakaotalk_parsing.parsing()
         target_users = core.search_sns_raise_users()
     except Exception as e:
         log.error(f"지난주 활동 내역을 체크할 수 없습니다.")
@@ -57,10 +58,10 @@ def main():
             if insta.username == str(target_post.username).split('@')[-1]:
                 continue
 
+            verify(insta=insta, link=target_post.link, target_users=target_users)
+
             count += 1
             sleep_by_count(count=count, amount=5, sec=60)
-
-            verify(insta=insta, link=target_post.link, target_users=target_users)
         except Exception as e:
             if challenge_required_count > 0:
                 log.error(f"{link} 활동 내용 체크 실패: {e}")

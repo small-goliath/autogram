@@ -1,11 +1,11 @@
-from time import sleep
 from typing import List
 
-import app.core as core
+from app.core import AutogramCore
 from app.batch import kakaotalk_parsing
 from app.batch.notification import Discord
 from app.exception.custom_exception import CommentError, LikeError
 from app.gpt import GPT
+from app.insta import Insta
 from app.logger import get_logger
 from app.model.model import ActionTarget
 from app.util import get_outsiders, sleep_by_count
@@ -17,10 +17,13 @@ def main():
     gpt = GPT()
     discord = Discord()
     count = 0
-    
+    targets: List[ActionTarget] = []
+    insta: Insta = None
+    core = AutogramCore()
+
     try:
         insta = core.login_producer("doto.ri_")
-        targets: List[ActionTarget] = kakaotalk_parsing.parsing()
+        targets = kakaotalk_parsing.parsing()
     except Exception as e:
         log.error(f"품앗이를 할 수 없습니다.")
         discord.send_message(f"품앗이를 할 수 없습니다: [{e}]")
