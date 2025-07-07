@@ -68,7 +68,7 @@ def main():
                 discord.send_message(f"{link} 활동 내역 체크 실패 [{e}]")
                 break
 
-            if "challenge_required" in str(e):
+            if "challenge_required" in str(e) or "login_required" in str(e):
                 challenge_required_count += 1
                 insta = core.login_producer(SECOND_INSTAGRAM_ADMIN)
                 try:

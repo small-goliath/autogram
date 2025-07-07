@@ -45,7 +45,7 @@ def main():
                 discord.send_message(f"{link} 활동 정보 조회 실패 [{e}]")
                 break
 
-            if "challenge_required" in str(e):
+            if "challenge_required" in str(e) or "login_required" in str(e):
                 challenge_required_count += 1
                 insta = core.login_producer(SECOND_INSTAGRAM_ADMIN)
                 try:
@@ -54,6 +54,7 @@ def main():
                     log.error(f"{link} 정보 조회 실패: {e}")
                     discord.send_message(f"{link} 활동 정보 조회 실패 [{e}]")
                     break
+            log.warning(f"정보 조회 실패: {e}")
         for username in usernames:
             try:
                 count += 1
