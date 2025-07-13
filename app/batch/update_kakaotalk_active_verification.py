@@ -46,6 +46,7 @@ def main():
                 break
 
             if "challenge_required" in str(e) or "login_required" in str(e):
+                log.info("admin 계정을 변경합니다.")
                 challenge_required_count += 1
                 insta = core.login_producer(SECOND_INSTAGRAM_ADMIN)
                 try:
@@ -55,6 +56,7 @@ def main():
                     discord.send_message(f"{link} 활동 정보 조회 실패 [{e}]")
                     break
             log.warning(f"정보 조회 실패: {e}")
+
         for username in usernames:
             try:
                 count += 1

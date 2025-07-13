@@ -133,26 +133,6 @@ class AutogramCore:
                 except Exception as e:
                     self.log.warning(f"{producer_instagram.username}계정으로 {consumer_username} 액션 실패: {e}")
 
-    def login_producer(self, username: str) -> Insta:
-        with transactional() as session:
-            producer = self.db.search_producer(username=username, session=session)
-            if not producer:
-                self.log.warning("실행할 인스타그램 계정이 없습니다.")
-                sys.exit(0)
-            
-            producer_instagram = Insta(producer)
-            try:
-                producer_instagram.login()
-            except LoginError as e:
-                self.log.error(f"{producer.username} 로그인 실패: {e}")
-                self.discord.send_message(f"{producer.username} 로그인 실패 [{e}]")
-                sys.exit(1)
-            except Exception as e:
-                self.log.error(f"{producer.username} 로그인 중 알 수 없는 오류 발생: {e}")
-                sys.exit(1)
-
-            return producer_instagram
-
     def search_sns_raise_users(self) -> List[str]:
         with read_only_transactional() as session:
             users = self.db.search_sns_raise_users(session)
