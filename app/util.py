@@ -55,5 +55,8 @@ def get_outsiders() -> List[str]:
     
 def sleep_by_count(count: int, amount: int, sec: int):
     if count % amount == 0:
-        log.info(f"{sec}초 중단.")
-        sleep(sec)
+        sleep_to_log(sec)
+
+def sleep_to_log(sec: int):
+    log.info(f"{sec}초 중단.")
+    sleep(sec)

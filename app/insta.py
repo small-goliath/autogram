@@ -18,12 +18,12 @@ from instagrapi import Client
 from app.exception.custom_exception import CommentError, LikeError, LoginError, SearchCommentError
 from app.model.entity import Producer
 from app.logger import get_logger
-from app.util import sleep_by_count
+from app.util import sleep_by_count, sleep_to_log
 
 class Insta:
     LIKE_SLEEP_SEC = 5
     COMMENT_SLEEP_SEC = 1
-    SEARCH_COMMENT_SLEEP_SEC = 5
+    SEARCH_COMMENT_SLEEP_SEC = 10
     SEARCH_FEEDS_SLEEP_SEC = 3
 
     def __init__(self, account: Producer):
@@ -62,7 +62,7 @@ class Insta:
     def comment(self, media_id: str, comment: str):
         self.log.info(f"[{media_id}]피드에 [{comment}] 댓글을 작성합니다.")
         try:
-            sleep(self.COMMENT_SLEEP_SEC)
+            sleep_to_log(self.COMMENT_SLEEP_SEC)
             self.client.media_comment(media_id=media_id, text=comment)
         except Exception as e:
             raise CommentError("댓글을 달지 못했습니다.") from e
@@ -70,7 +70,7 @@ class Insta:
     def like(self, media_id: str):
         self.log.info(f"[{media_id}]를 좋아요합니다.")
         try:
-            sleep(self.LIKE_SLEEP_SEC)
+            sleep_to_log(self.LIKE_SLEEP_SEC)
             self.client.media_like(media_id=media_id)
         except Exception as e:
             raise LikeError("좋아요를 하지 못했습니다.") from e
@@ -85,18 +85,17 @@ class Insta:
                 count += 1
                 comments_part, next_min_id = self.client.media_comments_chunk(media_id=media_id, max_amount=10, min_id=next_min_id)
                 comments.extend(comments_part)
-                self.log.info(f"{self.SEARCH_COMMENT_SLEEP_SEC}초 중단.")
-                sleep(self.SEARCH_COMMENT_SLEEP_SEC)
+                sleep_to_log(self.SEARCH_COMMENT_SLEEP_SEC)
                 if not next_min_id:
                     break
-                sleep_by_count(count=count, amount=5, sec=10)
+                sleep_by_count(count=count, amount=5, sec=20)
             return comments
         except Exception as e:
             self.log.error(f"{media_id} 댓글 조회 중 오류 발생: {e}")
             raise SearchCommentError(f"댓글을 조회하지 못했습니다: {e}") from e
         
     def exists_comment(self, media_id: str, username: str) -> bool:
-        sleep(self.SEARCH_COMMENT_SLEEP_SEC)
+        sleep_to_log(self.SEARCH_COMMENT_SLEEP_SEC)
         try:
             comments: List[Comment] = self.search_comments(media_id=media_id)
             return any(comment.user.username == username for comment in comments)
