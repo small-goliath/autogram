@@ -46,7 +46,7 @@ def main():
                 break
 
             if "challenge_required" in str(e) or "login_required" in str(e):
-                log.info("admin 계정을 변경합니다.")
+                log.info(f"admin 계정을 변경합니다: [{e}]")
                 challenge_required_count += 1
                 insta = core.login_producer(SECOND_INSTAGRAM_ADMIN)
                 try:
