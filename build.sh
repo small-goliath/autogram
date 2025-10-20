@@ -7,7 +7,7 @@ set -o errexit
 pip install --upgrade pip setuptools wheel
 
 # Install cryptography and its dependencies first with binary wheels only
-pip install --only-binary=:all: cryptography==41.0.7 cffi==1.16.0
+pip install --only-binary=:all: cryptography==41.0.7 cffi==1.17.1
 
 # Install remaining dependencies
 pip install -r requirements.txt
