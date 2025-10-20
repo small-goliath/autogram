@@ -3,7 +3,13 @@
 
 set -o errexit
 
+# Upgrade pip
 pip install --upgrade pip
+
+# Install wheel to use pre-built binaries
+pip install wheel
+
+# Install dependencies
 pip install -r requirements.txt
 
 # Run migrations
