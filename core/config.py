@@ -1,5 +1,6 @@
 """Configuration settings for the application."""
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+from pydantic_settings import BaseSettings
 from typing import Optional
 
 
@@ -37,11 +38,12 @@ class Settings(BaseSettings):
     KAKAOTALK_OPEN_CHAT_LINK: str = ""
     KAKAOTALK_QR_CODE_PATH: str = "/images/kakao-qr.png"
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True
-    )
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+        extra = "ignore"
 
 
+# Initialize settings
 settings = Settings()

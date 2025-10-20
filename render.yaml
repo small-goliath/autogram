@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: autogram-backend
+    runtime: python
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn api.index:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_NAME
+        value: Autogram
+      - key: APP_VERSION
+        value: 1.0.0
+      - key: DEBUG
+        value: False
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_ECHO
+        value: False
+      - key: SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://autogram-zeta.vercel.app,http://localhost:3000
+      - key: HELPER_SESSION_DIR
+        value: ./sessions
+      - key: KAKAOTALK_FILE_PATH
+        value: batch/kakaotalk/KakaoTalk_latest.txt
+      - key: KAKAOTALK_OPEN_CHAT_LINK
+        value: https://open.kakao.com/o/ggp7Gqsh
+      - key: KAKAOTALK_QR_CODE_PATH
+        value: /images/SNS_raise_QR.png
+      - key: PYTHON_VERSION
+        value: 3.11.9
