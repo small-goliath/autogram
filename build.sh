@@ -3,13 +3,13 @@
 
 set -o errexit
 
-# Upgrade pip
-pip install --upgrade pip
+# Upgrade pip and setuptools
+pip install --upgrade pip setuptools wheel
 
-# Install wheel to use pre-built binaries
-pip install wheel
+# Install cryptography and its dependencies first with binary wheels only
+pip install --only-binary=:all: cryptography==41.0.7 cffi==1.16.0
 
-# Install dependencies
+# Install remaining dependencies
 pip install -r requirements.txt
 
 # Run migrations
