@@ -11,8 +11,9 @@ alembic==1.13.3
 
 # Authentication and Security
 python-jose[cryptography]==3.3.0
-bcrypt==4.2.1
-cryptography==43.0.1
+bcrypt==4.0.1
+cryptography==41.0.7
+cffi==1.16.0
 
 # Instagram Integration
 instaloader==4.13
