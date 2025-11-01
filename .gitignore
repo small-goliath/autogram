@@ -77,6 +77,3 @@ Thumbs.db
 # gmail credentials (for local token generation)
 credentials.json
 token.json
-
-# kakaotalk
-batch/kakaotalk/KakaoTalk_latest.txt
