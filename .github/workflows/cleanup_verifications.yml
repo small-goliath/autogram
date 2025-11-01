@@ -1,0 +1,55 @@
+name: Cleanup Verifications
+
+on:
+  # 짝수 일자 오전 3시(KST) = UTC 18:00 (전날)
+  schedule:
+    - cron: '0 18 2,4,6,8,10,12,14,16,18,20,22,24,26,28,30 * *'
+  # 수동 실행도 가능
+  workflow_dispatch:
+
+jobs:
+  cleanup-verifications:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run cleanup_verifications batch
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python batch/verification/cleanup_verifications.py
+
+      - name: Send Discord notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            COLOR=5763719
+            TITLE="✅ Cleanup Verifications Success"
+          else
+            COLOR=15158332
+            TITLE="❌ Cleanup Verifications Failed"
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "'"$TITLE"'",
+                "description": "검증 레코드 정리 배치 실행 완료",
+                "color": '"$COLOR"',
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S)'"
+              }]
+            }'

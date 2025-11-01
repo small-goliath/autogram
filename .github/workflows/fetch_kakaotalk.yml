@@ -1,0 +1,80 @@
+name: Fetch KakaoTalk from Gmail
+
+on:
+  # 매주 월요일 오후 13시(KST) 실행 = UTC 04:00
+  schedule:
+    - cron: '0 4 * * 1'
+  # 수동 실행도 가능
+  workflow_dispatch:
+
+jobs:
+  fetch-and-process:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+
+      - name: Fetch KakaoTalk from Gmail
+        env:
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+        run: |
+          python .github/scripts/fetch_kakaotalk.py
+
+      - name: Check if file was downloaded
+        id: check_file
+        run: |
+          if [ -f "batch/kakaotalk/KakaoTalk_latest.txt" ]; then
+            echo "file_exists=true" >> $GITHUB_OUTPUT
+            echo "✅ KakaoTalk file downloaded successfully"
+          else
+            echo "file_exists=false" >> $GITHUB_OUTPUT
+            echo "❌ No file found"
+            exit 1
+          fi
+
+      - name: Trigger parse_kakaotalk workflow
+        if: steps.check_file.outputs.file_exists == 'true'
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: kakaotalk-updated
+          client-payload: '{"source": "gmail-fetch"}'
+
+      - name: Send Discord notification on success
+        if: success()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "✅ KakaoTalk File Fetched",
+                "description": "Gmail에서 카카오톡 파일을 성공적으로 가져왔습니다.",
+                "color": 5763719,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S)'"
+              }]
+            }'
+
+      - name: Send Discord notification on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ KakaoTalk Fetch Failed",
+                "description": "Gmail에서 카카오톡 파일 가져오기 실패",
+                "color": 15158332,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S)'"
+              }]
+            }'

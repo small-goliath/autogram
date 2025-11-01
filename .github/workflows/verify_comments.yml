@@ -1,0 +1,62 @@
+name: Verify Comments
+
+on:
+  # parse_kakaotalk 후 자동 트리거
+  repository_dispatch:
+    types: [kakaotalk-parsed]
+  # 수동 실행도 가능
+  workflow_dispatch:
+
+jobs:
+  verify-comments:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run verify_comments batch
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python batch/verification/verify_comments.py
+
+      - name: Send Discord notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            COLOR=5763719
+            TITLE="✅ Verify Comments Success"
+          else
+            COLOR=15158332
+            TITLE="❌ Verify Comments Failed"
+          fi
+
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "'"$TITLE"'",
+                "description": "댓글 검증 배치 실행 완료",
+                "color": '"$COLOR"',
+                "fields": [
+                  {
+                    "name": "Trigger",
+                    "value": "${{ github.event_name }}",
+                    "inline": true
+                  }
+                ],
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%S)'"
+              }]
+            }'

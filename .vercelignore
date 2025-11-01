@@ -1,0 +1,30 @@
+# Vercel ignores these by default, but good to have
+.git
+.next
+node_modules
+
+# Python virtual environment
+.venv
+alembic.ini
+alembic/
+__pycache__/
+
+# Local scripts and logs
+batch/
+logs/
+
+# Environment variables
+.env*
+!/.env.production.local
+!/.env.development.local
+!/.env.local
+!/.env.example
+
+# Other
+*.md
+.env.example
+.gitignore
+.github/
+script/
+tests/
+*.md

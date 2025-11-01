@@ -1,4 +1,6 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.venv
+*.md
+
 
 # dependencies
 /node_modules
@@ -53,8 +55,7 @@ venv/
 sessions/
 
 # alembic
-alembic/versions/*.py
-!alembic/versions/__init__.py
+# Note: We keep 001_initial_schema.py in version control
 
 # logs
 *.log
@@ -72,3 +73,10 @@ Thumbs.db
 # ai
 .claude/
 .gemini/
+
+# gmail credentials (for local token generation)
+credentials.json
+token.json
+
+# kakaotalk
+batch/kakaotalk/KakaoTalk_latest.txt
