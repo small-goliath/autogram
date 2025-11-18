@@ -1,26 +1,26 @@
-import axios, { AxiosError, AxiosInstance } from 'axios';
 import type {
-  Announcement,
-  RequestByWeek,
-  UserActionVerification,
-  SnsRaiseUser,
-  Helper,
-  Consumer,
-  Producer,
-  UnfollowCheckResult,
-  AdminLoginResponse,
-  ConsumerFormData,
-  ProducerFormData,
-  UnfollowCheckerFormData,
   AdminLoginFormData,
-  SnsUserFormData,
-  HelperFormData,
+  AdminLoginResponse,
+  Announcement,
   AnnouncementFormData,
   APIError,
+  Consumer,
+  ConsumerFormData,
+  Helper,
+  HelperFormData,
+  Producer,
+  ProducerFormData,
+  RequestByWeek,
+  SnsRaiseUser,
+  SnsUserFormData,
+  UnfollowCheckerFormData,
+  UnfollowCheckResult,
+  UserActionVerification,
 } from '@/types';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 
 // API Base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

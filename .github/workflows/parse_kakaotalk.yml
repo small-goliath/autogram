@@ -20,6 +20,10 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: upgrade pip
+        run: |
+          pip install --upgrade pip
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt

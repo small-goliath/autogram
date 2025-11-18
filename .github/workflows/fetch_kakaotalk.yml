@@ -23,6 +23,10 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: upgrade pip
+        run: |
+          pip install --upgrade pip
+
       - name: Install dependencies
         run: |
           pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
