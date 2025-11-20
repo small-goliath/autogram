@@ -69,7 +69,7 @@ export default function ConsumerPage() {
     const variants = {
       active: 'success' as const,
       pending: 'warning' as const,
-      inactive: 'secondary' as const
+      inactive: 'gray' as const
     };
     const labels = {
       active: '활성',

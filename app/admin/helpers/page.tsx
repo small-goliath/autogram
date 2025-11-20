@@ -119,7 +119,7 @@ function HelpersManagementContent() {
     {
       header: '상태',
       accessor: ((helper: Helper) => (
-        <Badge variant={helper.is_active ? 'success' : 'secondary'}>
+        <Badge variant={helper.is_active ? 'success' : 'gray'}>
           {helper.is_active ? '활성' : '비활성'}
         </Badge>
       )) as any

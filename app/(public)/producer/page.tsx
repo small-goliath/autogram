@@ -83,7 +83,7 @@ export default function ProducerPage() {
     const variants = {
       active: 'success' as const,
       pending: 'warning' as const,
-      inactive: 'secondary' as const
+      inactive: 'gray' as const
     };
     const labels = {
       active: '활성',
@@ -131,7 +131,7 @@ export default function ProducerPage() {
               }
               placeholder="인스타그램 비밀번호를 입력하세요"
               required
-              helpText="비밀번호는 암호화되어 안전하게 저장됩니다"
+              helperText="비밀번호는 암호화되어 안전하게 저장됩니다"
             />
 
             <Input

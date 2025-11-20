@@ -151,7 +151,7 @@ export default function LastWeekPage() {
                       <h3 className="text-lg font-semibold text-gray-900">
                         @{request.username}
                       </h3>
-                      <Badge variant="info">
+                      <Badge variant="primary">
                         공유 날짜: {new Date(request.week_start_date).toLocaleDateString('ko-KR')}
                       </Badge>
                     </div>
