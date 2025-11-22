@@ -44,13 +44,7 @@ pipeline {
                         docker --version
 
                         echo "Docker Compose version (Jenkins):"
-                        if command -v docker-compose &> /dev/null; then
-                            docker-compose --version
-                        elif docker compose version &> /dev/null 2>&1; then
-                            docker compose version
-                        else
-                            echo "Docker Compose not found on Jenkins server (OK - only needed on deployment server)"
-                        fi
+                        docker-compose --version 2>/dev/null || docker compose version 2>/dev/null || echo "Docker Compose not found on Jenkins server (OK - only needed on deployment server)"
 
                         echo "Node version:"
                         node --version || echo "Node not found in Jenkins"
