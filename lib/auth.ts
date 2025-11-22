@@ -26,7 +26,12 @@ export const isAuthenticated = (): boolean => {
 
 export const login = async (username: string, password: string): Promise<void> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/login`, {
+    // Use relative path to leverage Next.js rewrites
+    const apiUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/api/admin/login`
+      : '/api/admin/login';
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
