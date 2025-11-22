@@ -19,8 +19,19 @@ import type {
 } from '@/types';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 
-// API Base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+// API Base URL - use root-relative path to leverage Next.js rewrites
+// Empty string or relative path causes issues on /admin/* routes
+// Use window.location.origin for client-side, empty for server-side
+const getApiBaseUrl = () => {
+  // Server-side rendering: use empty string (relative to Next.js server)
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  // Client-side: use root-relative path or window.location.origin
+  return process.env.NEXT_PUBLIC_API_URL || window.location.origin;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
