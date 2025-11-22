@@ -58,6 +58,31 @@ pipeline {
             }
         }
 
+        stage('Test SSH Credentials') {
+            steps {
+                script {
+                    echo "Testing SSH credentials..."
+                    try {
+                        withCredentials([sshUserPrivateKey(credentialsId: 'autogram-deploy-server', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                            sh """
+                                echo "Credentials loaded successfully!"
+                                echo "SSH User: \$SSH_USER"
+                                echo "Testing SSH connection..."
+                                ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} 'echo "SSH connection successful!"'
+                            """
+                        }
+                    } catch (Exception e) {
+                        echo "CREDENTIAL TEST FAILED: ${e.message}"
+                        echo "Please check:"
+                        echo "1. Credential ID is exactly 'autogram-deploy-server'"
+                        echo "2. Credential is in 'Global credentials (unrestricted)' scope"
+                        echo "3. Credential type is 'SSH Username with private key'"
+                        error("Credentials test failed - stopping pipeline")
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
