@@ -85,9 +85,11 @@ pipeline {
                         # Test if image exists
                         docker images ${DOCKER_IMAGE}:${DOCKER_TAG}
 
-                        # Run basic container test
-                        docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} node --version
-                        docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} python3 --version
+                        # Test node and python are available
+                        docker run --rm --entrypoint node ${DOCKER_IMAGE}:${DOCKER_TAG} --version
+                        docker run --rm --entrypoint python3 ${DOCKER_IMAGE}:${DOCKER_TAG} --version
+
+                        echo "✅ Docker image tests passed"
                     """
                 }
             }

@@ -11,7 +11,7 @@ FASTAPI_PID=$!
 # Wait for FastAPI to be ready
 echo "Waiting for FastAPI to be ready..."
 for i in {1..30}; do
-    if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
+    if curl -f http://localhost:8000/ > /dev/null 2>&1; then
         echo "FastAPI is ready!"
         break
     fi
