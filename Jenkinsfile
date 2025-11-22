@@ -60,21 +60,42 @@ pipeline {
             steps {
                 script {
                     echo "Testing SSH credentials..."
+                    echo "Looking for credential ID: autogram-deploy-server"
+                    echo "Deploy host: ${DEPLOY_HOST}"
+
                     try {
-                        withCredentials([sshUserPrivateKey(credentialsId: 'autogram-deploy-server', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                        withCredentials([
+                            sshUserPrivateKey(
+                                credentialsId: 'autogram-deploy-server',
+                                keyFileVariable: 'SSH_KEY',
+                                usernameVariable: 'SSH_USER'
+                            )
+                        ]) {
                             sh """
-                                echo "Credentials loaded successfully!"
+                                echo "✅ Credentials loaded successfully!"
                                 echo "SSH User: \$SSH_USER"
-                                echo "Testing SSH connection..."
-                                ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} 'echo "SSH connection successful!"'
+                                echo "SSH Key file: \$SSH_KEY"
+                                echo "Testing SSH connection to ${DEPLOY_HOST}..."
+
+                                ssh -i \$SSH_KEY -o StrictHostKeyChecking=no -o ConnectTimeout=10 \$SSH_USER@${DEPLOY_HOST} 'echo "✅ SSH connection successful!"'
                             """
                         }
+                        echo "✅ SSH Credentials test PASSED"
                     } catch (Exception e) {
-                        echo "CREDENTIAL TEST FAILED: ${e.message}"
-                        echo "Please check:"
-                        echo "1. Credential ID is exactly 'autogram-deploy-server'"
-                        echo "2. Credential is in 'Global credentials (unrestricted)' scope"
-                        echo "3. Credential type is 'SSH Username with private key'"
+                        echo "❌ CREDENTIAL TEST FAILED"
+                        echo "Error: ${e.class.name}"
+                        echo "Message: ${e.message}"
+                        echo ""
+                        echo "Debug Info:"
+                        echo "- Credential ID being used: 'autogram-deploy-server'"
+                        echo "- Job name: ${env.JOB_NAME}"
+                        echo "- Workspace: ${env.WORKSPACE}"
+                        echo ""
+                        echo "Please verify:"
+                        echo "1. Credential ID is exactly 'autogram-deploy-server' (confirmed in Script Console)"
+                        echo "2. Credential type is 'SSH Username with private key'"
+                        echo "3. This pipeline has permission to access Global credentials"
+
                         error("Credentials test failed - stopping pipeline")
                     }
                 }
