@@ -16,11 +16,11 @@ COPY public ./public
 COPY app ./app
 COPY components ./components
 COPY lib ./lib
-COPY styles ./styles
+COPY types ./types
 
 RUN npm run build
 
-FROM python:3.12-slim AS python-base
+FROM python:3.11-slim AS python-base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.11-slim
@@ -62,8 +63,12 @@ COPY --from=nextjs-builder /app/node_modules ./node_modules
 COPY --from=nextjs-builder /app/package*.json ./
 COPY --from=nextjs-builder /app/next.config.js ./
 
+# Copy FastAPI application and dependencies
 COPY api ./api
+COPY backend ./backend
+COPY core ./core
 
+# Copy environment files
 COPY .env* ./
 
 RUN useradd -m -u 1000 appuser && \
