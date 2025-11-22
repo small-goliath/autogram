@@ -100,16 +100,9 @@ pipeline {
                 script {
                     echo "Stopping old containers..."
                     sh """
-                        # Detect docker compose command
-                        if command -v docker-compose &> /dev/null; then
-                            COMPOSE_CMD="docker-compose"
-                        else
-                            COMPOSE_CMD="docker compose"
-                        fi
-
                         if [ -f docker-compose.yml ]; then
                             echo "Stopping existing containers..."
-                            \$COMPOSE_CMD down || true
+                            docker compose down || true
                         else
                             echo "No docker-compose.yml found, skipping..."
                         fi
@@ -148,26 +141,19 @@ pipeline {
                 script {
                     echo "Starting new container..."
                     sh """
-                        # Detect docker compose command
-                        if command -v docker-compose &> /dev/null; then
-                            COMPOSE_CMD="docker-compose"
-                        else
-                            COMPOSE_CMD="docker compose"
-                        fi
-
                         # Start container
-                        \$COMPOSE_CMD up -d
+                        docker compose up -d
 
                         # Wait for container to be healthy
                         echo "Waiting for container to be healthy..."
                         sleep 10
 
                         # Check container status
-                        \$COMPOSE_CMD ps
+                        docker compose ps
 
                         # Check logs
                         echo "Container logs:"
-                        \$COMPOSE_CMD logs --tail=50
+                        docker compose logs --tail=50
                     """
                 }
             }
@@ -178,13 +164,6 @@ pipeline {
                 script {
                     echo "Performing health check..."
                     sh """
-                        # Detect docker compose command
-                        if command -v docker-compose &> /dev/null; then
-                            COMPOSE_CMD="docker-compose"
-                        else
-                            COMPOSE_CMD="docker compose"
-                        fi
-
                         # Wait for application to be ready
                         for i in {1..30}; do
                             if curl -f http://localhost:${DEPLOY_PORT}/ > /dev/null 2>&1; then
@@ -196,7 +175,7 @@ pipeline {
                         done
 
                         echo "❌ Health check failed!"
-                        \$COMPOSE_CMD logs --tail=100
+                        docker compose logs --tail=100
                         exit 1
                     """
                 }
@@ -237,17 +216,10 @@ pipeline {
             script {
                 try {
                     sh """
-                        # Detect docker compose command
-                        if command -v docker-compose &> /dev/null; then
-                            COMPOSE_CMD="docker-compose"
-                        else
-                            COMPOSE_CMD="docker compose"
-                        fi
-
                         echo "Container status:"
-                        \$COMPOSE_CMD ps || true
+                        docker compose ps || true
                         echo "Recent logs:"
-                        \$COMPOSE_CMD logs --tail=100 || true
+                        docker compose logs --tail=100 || true
                     """
                 } catch (Exception e) {
                     echo "Failed to get deployment logs: ${e.message}"
