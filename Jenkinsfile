@@ -100,12 +100,10 @@ pipeline {
                 script {
                     echo "Stopping old containers..."
                     sh """
-                        if [ -f docker-compose.yml ]; then
-                            echo "Stopping existing containers..."
-                            docker compose down || true
-                        else
-                            echo "No docker-compose.yml found, skipping..."
-                        fi
+                        # Stop and remove container if exists
+                        docker stop autogram 2>/dev/null || true
+                        docker rm autogram 2>/dev/null || true
+                        echo "✅ Old container stopped"
                     """
                 }
             }
@@ -141,19 +139,27 @@ pipeline {
                 script {
                     echo "Starting new container..."
                     sh """
-                        # Start container
-                        docker compose up -d
+                        # Start container with docker run
+                        docker run -d \\
+                            --name autogram \\
+                            --restart unless-stopped \\
+                            -p ${DEPLOY_PORT}:3000 \\
+                            --env-file .env \\
+                            -v \$(pwd)/data:/app/data \\
+                            -v \$(pwd)/logs:/app/logs \\
+                            ${DOCKER_IMAGE}:${DOCKER_TAG}
 
                         # Wait for container to be healthy
                         echo "Waiting for container to be healthy..."
                         sleep 10
 
                         # Check container status
-                        docker compose ps
+                        echo "Container status:"
+                        docker ps --filter name=autogram
 
                         # Check logs
                         echo "Container logs:"
-                        docker compose logs --tail=50
+                        docker logs --tail=50 autogram
                     """
                 }
             }
@@ -175,7 +181,7 @@ pipeline {
                         done
 
                         echo "❌ Health check failed!"
-                        docker compose logs --tail=100
+                        docker logs --tail=100 autogram
                         exit 1
                     """
                 }
@@ -217,9 +223,9 @@ pipeline {
                 try {
                     sh """
                         echo "Container status:"
-                        docker compose ps || true
+                        docker ps --filter name=autogram || true
                         echo "Recent logs:"
-                        docker compose logs --tail=100 || true
+                        docker logs --tail=100 autogram || true
                     """
                 } catch (Exception e) {
                     echo "Failed to get deployment logs: ${e.message}"
