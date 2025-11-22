@@ -183,10 +183,15 @@ pipeline {
                 script {
                     echo "Performing health check..."
                     sh """
+                        # Get host IP from Jenkins container
+                        HOST_IP=\$(ip route | grep default | awk '{print \$3}')
+                        echo "Using host IP: \$HOST_IP"
+
                         # Wait for application to be ready
                         for i in \$(seq 1 30); do
-                            if curl -f http://localhost:${DEPLOY_PORT}/ > /dev/null 2>&1; then
+                            if curl -f http://\$HOST_IP:${DEPLOY_PORT}/ > /dev/null 2>&1; then
                                 echo "✅ Application is healthy!"
+                                echo "Application URL: http://\$HOST_IP:${DEPLOY_PORT}/"
                                 exit 0
                             fi
                             echo "Waiting for application to be ready... (\$i/30)"
