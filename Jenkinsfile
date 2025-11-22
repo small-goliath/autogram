@@ -57,6 +57,24 @@ pipeline {
             }
         }
 
+        stage('Debug SSH Environment') {
+            steps {
+                script {
+                    echo "Checking Jenkins SSH environment..."
+                    sh '''
+                        echo "=== SSH Version ==="
+                        ssh -V 2>&1 || true
+
+                        echo "=== OpenSSL Version ==="
+                        openssl version 2>&1 || true
+
+                        echo "=== ssh-add Version ==="
+                        ssh-add -V 2>&1 || true
+                    '''
+                }
+            }
+        }
+
         stage('Test SSH Credentials') {
             steps {
                 script {
@@ -65,12 +83,20 @@ pipeline {
                     echo "Deploy host: ${DEPLOY_HOST}"
 
                     try {
-                        sshagent(credentials: [DEPLOY_CREDENTIALS]) {
+                        withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
                             sh """
                                 echo "✅ Credentials loaded successfully!"
-                                echo "Testing SSH connection to ${DEPLOY_HOST}:${DEPLOY_SSH_PORT}..."
+                                echo "Key file location: \${SSH_KEY_FILE}"
 
-                                ssh -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=10 dotori@${DEPLOY_HOST} 'echo "✅ SSH connection successful!"'
+                                # Fix key file permissions
+                                chmod 600 \${SSH_KEY_FILE}
+
+                                # Test key format
+                                echo "Testing key format..."
+                                ssh-keygen -l -f \${SSH_KEY_FILE} || echo "Key format check failed (might be OK)"
+
+                                echo "Testing SSH connection to ${DEPLOY_HOST}:${DEPLOY_SSH_PORT}..."
+                                ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -v dotori@${DEPLOY_HOST} 'echo "✅ SSH connection successful!"' 2>&1 | tail -20
                             """
                         }
                         echo "✅ SSH Credentials test PASSED"
@@ -78,16 +104,6 @@ pipeline {
                         echo "❌ CREDENTIAL TEST FAILED"
                         echo "Error: ${e.class.name}"
                         echo "Message: ${e.message}"
-                        echo ""
-                        echo "Debug Info:"
-                        echo "- Credential ID being used: 'autogram-deploy-server'"
-                        echo "- Job name: ${env.JOB_NAME}"
-                        echo "- Workspace: ${env.WORKSPACE}"
-                        echo ""
-                        echo "Please verify:"
-                        echo "1. Credential ID is exactly 'autogram-deploy-server' (confirmed in Script Console)"
-                        echo "2. Credential type is 'SSH Username with private key'"
-                        echo "3. This pipeline has permission to access Global credentials"
 
                         error("Credentials test failed - stopping pipeline")
                     }
@@ -134,9 +150,10 @@ pipeline {
             steps {
                 script {
                     echo "Stopping old containers on deployment server..."
-                    sshagent(credentials: [DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
                         sh """
-                            ssh -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            chmod 600 \${SSH_KEY_FILE}
+                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR} || exit 0
 
                                 # Detect docker compose command
@@ -173,13 +190,13 @@ pipeline {
                             '
 
                             # Copy docker-compose.yml and necessary files
-                            scp -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
+                            scp -i \${SSH_KEY_FILE} -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
                                 docker-compose.yml \
                                 dotori@${DEPLOY_HOST}:${PROJECT_DIR}/
 
                             # Copy .env file if exists
                             if [ -f .env.production ]; then
-                                scp -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
+                                scp -i \${SSH_KEY_FILE} -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
                                     .env.production \
                                     dotori@${DEPLOY_HOST}:${PROJECT_DIR}/.env
                             fi
@@ -201,7 +218,7 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
                             # Transfer image to server
-                            scp -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
+                            scp -i \${SSH_KEY_FILE} -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
                                 /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz \
                                 dotori@${DEPLOY_HOST}:/tmp/
 
@@ -231,9 +248,10 @@ pipeline {
             steps {
                 script {
                     echo "Starting new container..."
-                    sshagent(credentials: [DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
                         sh """
-                            ssh -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            chmod 600 \${SSH_KEY_FILE}
+                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
 
                                 # Detect docker compose command
@@ -267,9 +285,10 @@ pipeline {
             steps {
                 script {
                     echo "Performing health check..."
-                    sshagent(credentials: [DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
                         sh """
-                            ssh -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            chmod 600 \${SSH_KEY_FILE}
+                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
                                 # Detect docker compose command
                                 if command -v docker-compose &> /dev/null; then
                                     COMPOSE_CMD="docker-compose"
@@ -314,9 +333,10 @@ pipeline {
                         docker image prune -f
                     """
 
-                    sshagent(credentials: [DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
                         sh """
-                            ssh -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            chmod 600 \${SSH_KEY_FILE}
+                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
                                 # Keep only last 3 tagged images
                                 docker images ${DOCKER_IMAGE} --format "{{.Tag}}" | \
                                     grep -E "^[0-9]+\$" | \
@@ -346,9 +366,10 @@ pipeline {
 
             script {
                 try {
-                    sshagent(credentials: [DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
                         sh """
-                            ssh -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            chmod 600 \${SSH_KEY_FILE}
+                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
 
                                 # Detect docker compose command
