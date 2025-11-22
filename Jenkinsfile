@@ -43,16 +43,13 @@ pipeline {
                         echo "Docker version:"
                         docker --version
 
-                        echo "Docker Compose version:"
+                        echo "Docker Compose version (Jenkins):"
                         if command -v docker-compose &> /dev/null; then
                             docker-compose --version
-                            echo "DOCKER_COMPOSE_CMD=docker-compose" > /tmp/compose_cmd
-                        elif docker compose version &> /dev/null; then
+                        elif docker compose version &> /dev/null 2>&1; then
                             docker compose version
-                            echo "DOCKER_COMPOSE_CMD=docker compose" > /tmp/compose_cmd
                         else
-                            echo "Docker Compose not found!"
-                            exit 1
+                            echo "Docker Compose not found on Jenkins server (OK - only needed on deployment server)"
                         fi
 
                         echo "Node version:"
@@ -61,9 +58,6 @@ pipeline {
                         echo "Python version:"
                         python3 --version || echo "Python not found in Jenkins"
                     '''
-
-                    env.DOCKER_COMPOSE_CMD = sh(script: 'cat /tmp/compose_cmd | cut -d= -f2', returnStdout: true).trim()
-                    echo "Using Docker Compose command: ${env.DOCKER_COMPOSE_CMD}"
                 }
             }
         }
