@@ -113,23 +113,24 @@ pipeline {
             steps {
                 script {
                     echo "Preparing environment in workspace..."
-                    sh """
-                        # Ensure directories exist
-                        mkdir -p data
-                        mkdir -p logs
 
-                        # Copy .env file if exists
-                        if [ -f .env.production ]; then
-                            cp -f .env.production .env
-                            echo "✅ Copied .env.production to .env"
-                        else
-                            echo "⚠️  No .env.production file found"
-                        fi
+                    // Create .env file from Jenkins credentials
+                    withCredentials([file(credentialsId: 'autogram-env-file', variable: 'ENV_FILE')]) {
+                        sh """
+                            # Ensure directories exist
+                            mkdir -p data
+                            mkdir -p logs
+                            mkdir -p sessions
 
-                        echo "✅ Environment prepared"
-                        echo "Working directory: \$(pwd)"
-                        ls -la
-                    """
+                            # Copy .env file from credentials
+                            cp -f \${ENV_FILE} .env
+                            echo "✅ Environment file created from Jenkins credentials"
+
+                            echo "✅ Environment prepared"
+                            echo "Working directory: \$(pwd)"
+                            ls -la
+                        """
+                    }
                 }
             }
         }
@@ -140,14 +141,26 @@ pipeline {
                     echo "Starting new container..."
                     sh """
                         # Start container with docker run
-                        docker run -d \\
-                            --name autogram \\
-                            --restart unless-stopped \\
-                            -p ${DEPLOY_PORT}:3000 \\
-                            --env-file .env \\
-                            -v \$(pwd)/data:/app/data \\
-                            -v \$(pwd)/logs:/app/logs \\
-                            ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        if [ -f .env ]; then
+                            echo "Using .env file"
+                            docker run -d \\
+                                --name autogram \\
+                                --restart unless-stopped \\
+                                -p ${DEPLOY_PORT}:3000 \\
+                                --env-file .env \\
+                                -v \$(pwd)/data:/app/data \\
+                                -v \$(pwd)/logs:/app/logs \\
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        else
+                            echo "No .env file found, starting without env file"
+                            docker run -d \\
+                                --name autogram \\
+                                --restart unless-stopped \\
+                                -p ${DEPLOY_PORT}:3000 \\
+                                -v \$(pwd)/data:/app/data \\
+                                -v \$(pwd)/logs:/app/logs \\
+                                ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        fi
 
                         # Wait for container to be healthy
                         echo "Waiting for container to be healthy..."
