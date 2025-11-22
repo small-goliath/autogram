@@ -6,7 +6,6 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
 
-        PROJECT_DIR = '/home/dotori/services/autogram'
         DEPLOY_PORT = '40102'
     }
 
@@ -52,8 +51,8 @@ pipeline {
                         echo "Current user:"
                         whoami
 
-                        echo "Project directory:"
-                        echo "${PROJECT_DIR}"
+                        echo "Workspace directory:"
+                        echo "${WORKSPACE}"
                     '''
                 }
             }
@@ -99,8 +98,6 @@ pipeline {
                 script {
                     echo "Stopping old containers..."
                     sh """
-                        cd ${PROJECT_DIR} || exit 0
-
                         # Detect docker compose command
                         if command -v docker-compose &> /dev/null; then
                             COMPOSE_CMD="docker-compose"
@@ -119,29 +116,26 @@ pipeline {
             }
         }
 
-        stage('Deploy Files') {
+        stage('Prepare Environment') {
             steps {
                 script {
-                    echo "Deploying files to ${PROJECT_DIR}..."
+                    echo "Preparing environment in workspace..."
                     sh """
                         # Ensure directories exist
-                        mkdir -p ${PROJECT_DIR}
-                        mkdir -p ${PROJECT_DIR}/data
-                        mkdir -p ${PROJECT_DIR}/logs
-
-                        # Copy docker-compose.yml
-                        cp -f docker-compose.yml ${PROJECT_DIR}/
+                        mkdir -p data
+                        mkdir -p logs
 
                         # Copy .env file if exists
                         if [ -f .env.production ]; then
-                            cp -f .env.production ${PROJECT_DIR}/.env
-                            echo "✅ Copied .env.production to ${PROJECT_DIR}/.env"
+                            cp -f .env.production .env
+                            echo "✅ Copied .env.production to .env"
                         else
                             echo "⚠️  No .env.production file found"
                         fi
 
-                        echo "✅ Files deployed successfully"
-                        ls -la ${PROJECT_DIR}/
+                        echo "✅ Environment prepared"
+                        echo "Working directory: \$(pwd)"
+                        ls -la
                     """
                 }
             }
@@ -152,8 +146,6 @@ pipeline {
                 script {
                     echo "Starting new container..."
                     sh """
-                        cd ${PROJECT_DIR}
-
                         # Detect docker compose command
                         if command -v docker-compose &> /dev/null; then
                             COMPOSE_CMD="docker-compose"
@@ -202,7 +194,6 @@ pipeline {
                         done
 
                         echo "❌ Health check failed!"
-                        cd ${PROJECT_DIR}
                         \$COMPOSE_CMD logs --tail=100
                         exit 1
                     """
@@ -233,6 +224,7 @@ pipeline {
     post {
         success {
             echo "✅ Deployment successful!"
+            echo "Workspace: ${WORKSPACE}"
             echo "Application is running at: http://localhost:${DEPLOY_PORT}"
             echo "Public URL: https://autogram.kro.kr"
         }
@@ -243,8 +235,6 @@ pipeline {
             script {
                 try {
                     sh """
-                        cd ${PROJECT_DIR}
-
                         # Detect docker compose command
                         if command -v docker-compose &> /dev/null; then
                             COMPOSE_CMD="docker-compose"
