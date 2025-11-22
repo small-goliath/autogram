@@ -10,8 +10,6 @@ pipeline {
         DEPLOY_PORT = '40102'
         PROJECT_DIR = '/home/dotori/services/autogram'
 
-        // Jenkins credentials ID (SSH key for deployment server)
-        // Create this in Jenkins: Manage Jenkins -> Credentials -> Add Credentials
         DEPLOY_CREDENTIALS = 'autogram-deploy-server'
     }
 
@@ -46,7 +44,16 @@ pipeline {
                         docker --version
 
                         echo "Docker Compose version:"
-                        docker compose version
+                        if command -v docker-compose &> /dev/null; then
+                            docker-compose --version
+                            echo "DOCKER_COMPOSE_CMD=docker-compose" > /tmp/compose_cmd
+                        elif docker compose version &> /dev/null; then
+                            docker compose version
+                            echo "DOCKER_COMPOSE_CMD=docker compose" > /tmp/compose_cmd
+                        else
+                            echo "Docker Compose not found!"
+                            exit 1
+                        fi
 
                         echo "Node version:"
                         node --version || echo "Node not found in Jenkins"
@@ -54,6 +61,9 @@ pipeline {
                         echo "Python version:"
                         python3 --version || echo "Python not found in Jenkins"
                     '''
+
+                    env.DOCKER_COMPOSE_CMD = sh(script: 'cat /tmp/compose_cmd | cut -d= -f2', returnStdout: true).trim()
+                    echo "Using Docker Compose command: ${env.DOCKER_COMPOSE_CMD}"
                 }
             }
         }
@@ -127,9 +137,16 @@ pipeline {
                             ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR} || exit 0
 
+                                # Detect docker compose command
+                                if command -v docker-compose &> /dev/null; then
+                                    COMPOSE_CMD="docker-compose"
+                                else
+                                    COMPOSE_CMD="docker compose"
+                                fi
+
                                 if [ -f docker-compose.yml ]; then
                                     echo "Stopping existing containers..."
-                                    docker compose down || true
+                                    \$COMPOSE_CMD down || true
                                 else
                                     echo "No docker-compose.yml found, skipping..."
                                 fi
@@ -217,19 +234,26 @@ pipeline {
                             ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
 
+                                # Detect docker compose command
+                                if command -v docker-compose &> /dev/null; then
+                                    COMPOSE_CMD="docker-compose"
+                                else
+                                    COMPOSE_CMD="docker compose"
+                                fi
+
                                 # Start container
-                                docker compose up -d
+                                \$COMPOSE_CMD up -d
 
                                 # Wait for container to be healthy
                                 echo "Waiting for container to be healthy..."
                                 sleep 10
 
                                 # Check container status
-                                docker compose ps
+                                \$COMPOSE_CMD ps
 
                                 # Check logs
                                 echo "Container logs:"
-                                docker compose logs --tail=50
+                                \$COMPOSE_CMD logs --tail=50
                             '
                         """
                     }
@@ -244,6 +268,13 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
                             ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                                # Detect docker compose command
+                                if command -v docker-compose &> /dev/null; then
+                                    COMPOSE_CMD="docker-compose"
+                                else
+                                    COMPOSE_CMD="docker compose"
+                                fi
+
                                 # Wait for application to be ready
                                 for i in {1..30}; do
                                     if curl -f http://localhost:${DEPLOY_PORT}/ > /dev/null 2>&1; then
@@ -255,7 +286,7 @@ pipeline {
                                 done
 
                                 echo "Health check failed!"
-                                docker compose logs --tail=100
+                                \$COMPOSE_CMD logs --tail=100
                                 exit 1
                             '
                         """
@@ -317,10 +348,18 @@ pipeline {
                         sh """
                             ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
+
+                                # Detect docker compose command
+                                if command -v docker-compose &> /dev/null; then
+                                    COMPOSE_CMD="docker-compose"
+                                else
+                                    COMPOSE_CMD="docker compose"
+                                fi
+
                                 echo "Container status:"
-                                docker compose ps
+                                \$COMPOSE_CMD ps
                                 echo "Recent logs:"
-                                docker compose logs --tail=100
+                                \$COMPOSE_CMD logs --tail=100
                             ' || true
                         """
                     }
@@ -333,7 +372,6 @@ pipeline {
         always {
             echo "Pipeline finished"
 
-            // Clean up workspace
             cleanWs(
                 deleteDirs: true,
                 disableDeferredWipeout: true,
