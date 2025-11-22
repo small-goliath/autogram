@@ -6,12 +6,8 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
 
-        DEPLOY_HOST = '${AUTOGRAM_PUBLIC_IP}'
-        DEPLOY_SSH_PORT = '40022'
-        DEPLOY_PORT = '40102'
         PROJECT_DIR = '/home/dotori/services/autogram'
-
-        DEPLOY_CREDENTIALS = 'autogram-deploy-server'
+        DEPLOY_PORT = '40102'
     }
 
     options {
@@ -44,7 +40,7 @@ pipeline {
                         echo "Docker version:"
                         docker --version
 
-                        echo "Docker Compose version (Jenkins):"
+                        echo "Docker Compose version:"
                         docker-compose --version 2>/dev/null || docker compose version 2>/dev/null || echo "Docker Compose not found on Jenkins server (OK - only needed on deployment server)"
 
                         echo "Node version:"
@@ -52,61 +48,13 @@ pipeline {
 
                         echo "Python version:"
                         python3 --version || echo "Python not found in Jenkins"
+
+                        echo "Current user:"
+                        whoami
+
+                        echo "Project directory:"
+                        echo "${PROJECT_DIR}"
                     '''
-                }
-            }
-        }
-
-        stage('Debug SSH Environment') {
-            steps {
-                script {
-                    echo "Checking Jenkins SSH environment..."
-                    sh '''
-                        echo "=== SSH Version ==="
-                        ssh -V 2>&1 || true
-
-                        echo "=== OpenSSL Version ==="
-                        openssl version 2>&1 || true
-
-                        echo "=== ssh-add Version ==="
-                        ssh-add -V 2>&1 || true
-                    '''
-                }
-            }
-        }
-
-        stage('Test SSH Credentials') {
-            steps {
-                script {
-                    echo "Testing SSH credentials..."
-                    echo "Looking for credential ID: autogram-deploy-server"
-                    echo "Deploy host: ${DEPLOY_HOST}"
-
-                    try {
-                        withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
-                            sh """
-                                echo "✅ Credentials loaded successfully!"
-                                echo "Key file location: \${SSH_KEY_FILE}"
-
-                                # Fix key file permissions
-                                chmod 600 \${SSH_KEY_FILE}
-
-                                # Test key format
-                                echo "Testing key format..."
-                                ssh-keygen -l -f \${SSH_KEY_FILE} || echo "Key format check failed (might be OK)"
-
-                                echo "Testing SSH connection to ${DEPLOY_HOST}:${DEPLOY_SSH_PORT}..."
-                                ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=10 -v dotori@${DEPLOY_HOST} 'echo "✅ SSH connection successful!"' 2>&1 | tail -20
-                            """
-                        }
-                        echo "✅ SSH Credentials test PASSED"
-                    } catch (Exception e) {
-                        echo "❌ CREDENTIAL TEST FAILED"
-                        echo "Error: ${e.class.name}"
-                        echo "Message: ${e.message}"
-
-                        error("Credentials test failed - stopping pipeline")
-                    }
                 }
             }
         }
@@ -149,97 +97,52 @@ pipeline {
         stage('Stop Old Container') {
             steps {
                 script {
-                    echo "Stopping old containers on deployment server..."
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
-                        sh """
-                            chmod 600 \${SSH_KEY_FILE}
-                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                cd ${PROJECT_DIR} || exit 0
-
-                                # Detect docker compose command
-                                if command -v docker-compose &> /dev/null; then
-                                    COMPOSE_CMD="docker-compose"
-                                else
-                                    COMPOSE_CMD="docker compose"
-                                fi
-
-                                if [ -f docker-compose.yml ]; then
-                                    echo "Stopping existing containers..."
-                                    \$COMPOSE_CMD down || true
-                                else
-                                    echo "No docker-compose.yml found, skipping..."
-                                fi
-                            '
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to Server') {
-            steps {
-                script {
-                    echo "Deploying to ${DEPLOY_HOST}..."
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                        sh """
-                            # Create project directory if not exists
-                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                mkdir -p ${PROJECT_DIR}
-                                mkdir -p ${PROJECT_DIR}/data
-                                mkdir -p ${PROJECT_DIR}/logs
-                            '
-
-                            # Copy docker-compose.yml and necessary files
-                            scp -i \${SSH_KEY_FILE} -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
-                                docker-compose.yml \
-                                dotori@${DEPLOY_HOST}:${PROJECT_DIR}/
-
-                            # Copy .env file if exists
-                            if [ -f .env.production ]; then
-                                scp -i \${SSH_KEY_FILE} -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
-                                    .env.production \
-                                    dotori@${DEPLOY_HOST}:${PROJECT_DIR}/.env
-                            fi
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Save and Load Docker Image') {
-            steps {
-                script {
-                    echo "Transferring Docker image to deployment server..."
+                    echo "Stopping old containers..."
                     sh """
-                        # Save Docker image to tar file
-                        docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz
+                        cd ${PROJECT_DIR} || exit 0
+
+                        # Detect docker compose command
+                        if command -v docker-compose &> /dev/null; then
+                            COMPOSE_CMD="docker-compose"
+                        else
+                            COMPOSE_CMD="docker compose"
+                        fi
+
+                        if [ -f docker-compose.yml ]; then
+                            echo "Stopping existing containers..."
+                            \$COMPOSE_CMD down || true
+                        else
+                            echo "No docker-compose.yml found, skipping..."
+                        fi
                     """
+                }
+            }
+        }
 
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                        sh """
-                            # Transfer image to server
-                            scp -i \${SSH_KEY_FILE} -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
-                                /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz \
-                                dotori@${DEPLOY_HOST}:/tmp/
+        stage('Deploy Files') {
+            steps {
+                script {
+                    echo "Deploying files to ${PROJECT_DIR}..."
+                    sh """
+                        # Ensure directories exist
+                        mkdir -p ${PROJECT_DIR}
+                        mkdir -p ${PROJECT_DIR}/data
+                        mkdir -p ${PROJECT_DIR}/logs
 
-                            # Load image on server
-                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                echo "Loading Docker image..."
-                                docker load < /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz
+                        # Copy docker-compose.yml
+                        cp -f docker-compose.yml ${PROJECT_DIR}/
 
-                                # Tag as latest
-                                docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:${DOCKER_LATEST}
+                        # Copy .env file if exists
+                        if [ -f .env.production ]; then
+                            cp -f .env.production ${PROJECT_DIR}/.env
+                            echo "✅ Copied .env.production to ${PROJECT_DIR}/.env"
+                        else
+                            echo "⚠️  No .env.production file found"
+                        fi
 
-                                # Clean up
-                                rm -f /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz
-
-                                echo "Available images:"
-                                docker images | grep ${DOCKER_IMAGE}
-                            '
-                        """
-                    }
-
-                    sh "rm -f /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz"
+                        echo "✅ Files deployed successfully"
+                        ls -la ${PROJECT_DIR}/
+                    """
                 }
             }
         }
@@ -248,35 +151,30 @@ pipeline {
             steps {
                 script {
                     echo "Starting new container..."
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
-                        sh """
-                            chmod 600 \${SSH_KEY_FILE}
-                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                cd ${PROJECT_DIR}
+                    sh """
+                        cd ${PROJECT_DIR}
 
-                                # Detect docker compose command
-                                if command -v docker-compose &> /dev/null; then
-                                    COMPOSE_CMD="docker-compose"
-                                else
-                                    COMPOSE_CMD="docker compose"
-                                fi
+                        # Detect docker compose command
+                        if command -v docker-compose &> /dev/null; then
+                            COMPOSE_CMD="docker-compose"
+                        else
+                            COMPOSE_CMD="docker compose"
+                        fi
 
-                                # Start container
-                                \$COMPOSE_CMD up -d
+                        # Start container
+                        \$COMPOSE_CMD up -d
 
-                                # Wait for container to be healthy
-                                echo "Waiting for container to be healthy..."
-                                sleep 10
+                        # Wait for container to be healthy
+                        echo "Waiting for container to be healthy..."
+                        sleep 10
 
-                                # Check container status
-                                \$COMPOSE_CMD ps
+                        # Check container status
+                        \$COMPOSE_CMD ps
 
-                                # Check logs
-                                echo "Container logs:"
-                                \$COMPOSE_CMD logs --tail=50
-                            '
-                        """
-                    }
+                        # Check logs
+                        echo "Container logs:"
+                        \$COMPOSE_CMD logs --tail=50
+                    """
                 }
             }
         }
@@ -285,33 +183,29 @@ pipeline {
             steps {
                 script {
                     echo "Performing health check..."
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
-                        sh """
-                            chmod 600 \${SSH_KEY_FILE}
-                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                # Detect docker compose command
-                                if command -v docker-compose &> /dev/null; then
-                                    COMPOSE_CMD="docker-compose"
-                                else
-                                    COMPOSE_CMD="docker compose"
-                                fi
+                    sh """
+                        # Detect docker compose command
+                        if command -v docker-compose &> /dev/null; then
+                            COMPOSE_CMD="docker-compose"
+                        else
+                            COMPOSE_CMD="docker compose"
+                        fi
 
-                                # Wait for application to be ready
-                                for i in {1..30}; do
-                                    if curl -f http://localhost:${DEPLOY_PORT}/ > /dev/null 2>&1; then
-                                        echo "Application is healthy!"
-                                        exit 0
-                                    fi
-                                    echo "Waiting for application to be ready... (\$i/30)"
-                                    sleep 2
-                                done
+                        # Wait for application to be ready
+                        for i in {1..30}; do
+                            if curl -f http://localhost:${DEPLOY_PORT}/ > /dev/null 2>&1; then
+                                echo "✅ Application is healthy!"
+                                exit 0
+                            fi
+                            echo "Waiting for application to be ready... (\$i/30)"
+                            sleep 2
+                        done
 
-                                echo "Health check failed!"
-                                \$COMPOSE_CMD logs --tail=100
-                                exit 1
-                            '
-                        """
-                    }
+                        echo "❌ Health check failed!"
+                        cd ${PROJECT_DIR}
+                        \$COMPOSE_CMD logs --tail=100
+                        exit 1
+                    """
                 }
             }
         }
@@ -320,7 +214,6 @@ pipeline {
             steps {
                 script {
                     echo "Cleaning up old Docker images..."
-
                     sh """
                         # Keep only last 3 tagged images
                         docker images ${DOCKER_IMAGE} --format "{{.Tag}}" | \
@@ -332,23 +225,6 @@ pipeline {
                         # Remove dangling images
                         docker image prune -f
                     """
-
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
-                        sh """
-                            chmod 600 \${SSH_KEY_FILE}
-                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                # Keep only last 3 tagged images
-                                docker images ${DOCKER_IMAGE} --format "{{.Tag}}" | \
-                                    grep -E "^[0-9]+\$" | \
-                                    sort -rn | \
-                                    tail -n +4 | \
-                                    xargs -I {} docker rmi ${DOCKER_IMAGE}:{} || true
-
-                                # Remove dangling images
-                                docker image prune -f
-                            '
-                        """
-                    }
                 }
             }
         }
@@ -356,36 +232,31 @@ pipeline {
 
     post {
         success {
-            echo "Deployment successful!"
-            echo "Application is running at: http://${DEPLOY_HOST}:${DEPLOY_PORT}"
+            echo "✅ Deployment successful!"
+            echo "Application is running at: http://localhost:${DEPLOY_PORT}"
             echo "Public URL: https://autogram.kro.kr"
         }
 
         failure {
-            echo "Deployment failed!"
+            echo "❌ Deployment failed!"
 
             script {
                 try {
-                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY_FILE')]) {
-                        sh """
-                            chmod 600 \${SSH_KEY_FILE}
-                            ssh -i \${SSH_KEY_FILE} -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                                cd ${PROJECT_DIR}
+                    sh """
+                        cd ${PROJECT_DIR}
 
-                                # Detect docker compose command
-                                if command -v docker-compose &> /dev/null; then
-                                    COMPOSE_CMD="docker-compose"
-                                else
-                                    COMPOSE_CMD="docker compose"
-                                fi
+                        # Detect docker compose command
+                        if command -v docker-compose &> /dev/null; then
+                            COMPOSE_CMD="docker-compose"
+                        else
+                            COMPOSE_CMD="docker compose"
+                        fi
 
-                                echo "Container status:"
-                                \$COMPOSE_CMD ps
-                                echo "Recent logs:"
-                                \$COMPOSE_CMD logs --tail=100
-                            ' || true
-                        """
-                    }
+                        echo "Container status:"
+                        \$COMPOSE_CMD ps || true
+                        echo "Recent logs:"
+                        \$COMPOSE_CMD logs --tail=100 || true
+                    """
                 } catch (Exception e) {
                     echo "Failed to get deployment logs: ${e.message}"
                 }
