@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  autogram:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autogram
+    restart: unless-stopped
+    ports:
+      - "40102:3000"  # Next.js port mapped to host 40102 for NGINX proxy
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data  # For persistent data if needed
+      - ./logs:/app/logs  # For application logs
+    networks:
+      - autogram-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  autogram-network:
+    driver: bridge
