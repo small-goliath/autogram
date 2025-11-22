@@ -4,20 +4,26 @@ FROM node:20-alpine AS nextjs-builder
 
 WORKDIR /app
 
+# Copy package files first for better caching
 COPY package*.json ./
 
-RUN npm ci --only=production
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
+# Copy configuration files
 COPY next.config.js ./
 COPY tsconfig.json ./
 COPY postcss.config.js* ./
 COPY tailwind.config.ts* ./
+
+# Copy source code
 COPY public ./public
 COPY app ./app
 COPY components ./components
 COPY lib ./lib
 COPY types ./types
 
+# Build Next.js application
 RUN npm run build
 
 FROM python:3.11-slim AS python-base
