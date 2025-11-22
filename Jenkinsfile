@@ -6,7 +6,8 @@ pipeline {
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_LATEST = 'latest'
 
-        DEPLOY_HOST = '${SERVER_IP}'
+        DEPLOY_HOST = '${AUTOGRAM_PUBLIC_IP}'
+        DEPLOY_SSH_PORT = '40022'
         DEPLOY_PORT = '40102'
         PROJECT_DIR = '/home/dotori/services/autogram'
 
@@ -75,9 +76,9 @@ pipeline {
                                 echo "✅ Credentials loaded successfully!"
                                 echo "SSH User: \$SSH_USER"
                                 echo "SSH Key file: \$SSH_KEY"
-                                echo "Testing SSH connection to ${DEPLOY_HOST}..."
+                                echo "Testing SSH connection to ${DEPLOY_HOST}:${DEPLOY_SSH_PORT}..."
 
-                                ssh -i \$SSH_KEY -o StrictHostKeyChecking=no -o ConnectTimeout=10 \$SSH_USER@${DEPLOY_HOST} 'echo "✅ SSH connection successful!"'
+                                ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no -o ConnectTimeout=10 \$SSH_USER@${DEPLOY_HOST} 'echo "✅ SSH connection successful!"'
                             """
                         }
                         echo "✅ SSH Credentials test PASSED"
@@ -143,7 +144,7 @@ pipeline {
                     echo "Stopping old containers on deployment server..."
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR} || exit 0
 
                                 # Detect docker compose command
@@ -173,20 +174,20 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
                             # Create project directory if not exists
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 mkdir -p ${PROJECT_DIR}
                                 mkdir -p ${PROJECT_DIR}/data
                                 mkdir -p ${PROJECT_DIR}/logs
                             '
 
                             # Copy docker-compose.yml and necessary files
-                            scp -i \$SSH_KEY -o StrictHostKeyChecking=no \
+                            scp -i \$SSH_KEY -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
                                 docker-compose.yml \
                                 \$SSH_USER@${DEPLOY_HOST}:${PROJECT_DIR}/
 
                             # Copy .env file if exists
                             if [ -f .env.production ]; then
-                                scp -i \$SSH_KEY -o StrictHostKeyChecking=no \
+                                scp -i \$SSH_KEY -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
                                     .env.production \
                                     \$SSH_USER@${DEPLOY_HOST}:${PROJECT_DIR}/.env
                             fi
@@ -208,12 +209,12 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
                             # Transfer image to server
-                            scp -i \$SSH_KEY -o StrictHostKeyChecking=no \
+                            scp -i \$SSH_KEY -P ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \
                                 /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz \
                                 \$SSH_USER@${DEPLOY_HOST}:/tmp/
 
                             # Load image on server
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 echo "Loading Docker image..."
                                 docker load < /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz
 
@@ -240,7 +241,7 @@ pipeline {
                     echo "Starting new container..."
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
 
                                 # Detect docker compose command
@@ -276,7 +277,7 @@ pipeline {
                     echo "Performing health check..."
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 # Detect docker compose command
                                 if command -v docker-compose &> /dev/null; then
                                     COMPOSE_CMD="docker-compose"
@@ -323,7 +324,7 @@ pipeline {
 
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 # Keep only last 3 tagged images
                                 docker images ${DOCKER_IMAGE} --format "{{.Tag}}" | \
                                     grep -E "^[0-9]+\$" | \
@@ -355,7 +356,7 @@ pipeline {
                 try {
                     withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -p ${DEPLOY_SSH_PORT} -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
 
                                 # Detect docker compose command
