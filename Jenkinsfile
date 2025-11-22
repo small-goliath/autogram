@@ -97,9 +97,9 @@ pipeline {
             steps {
                 script {
                     echo "Stopping old containers on deployment server..."
-                    sshagent([DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR} || exit 0
 
                                 if [ -f docker-compose.yml ]; then
@@ -119,25 +119,25 @@ pipeline {
             steps {
                 script {
                     echo "Deploying to ${DEPLOY_HOST}..."
-                    sshagent([DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
                             # Create project directory if not exists
-                            ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 mkdir -p ${PROJECT_DIR}
                                 mkdir -p ${PROJECT_DIR}/data
                                 mkdir -p ${PROJECT_DIR}/logs
                             '
 
                             # Copy docker-compose.yml and necessary files
-                            scp -o StrictHostKeyChecking=no \
+                            scp -i \$SSH_KEY -o StrictHostKeyChecking=no \
                                 docker-compose.yml \
-                                dotori@${DEPLOY_HOST}:${PROJECT_DIR}/
+                                \$SSH_USER@${DEPLOY_HOST}:${PROJECT_DIR}/
 
                             # Copy .env file if exists
                             if [ -f .env.production ]; then
-                                scp -o StrictHostKeyChecking=no \
+                                scp -i \$SSH_KEY -o StrictHostKeyChecking=no \
                                     .env.production \
-                                    dotori@${DEPLOY_HOST}:${PROJECT_DIR}/.env
+                                    \$SSH_USER@${DEPLOY_HOST}:${PROJECT_DIR}/.env
                             fi
                         """
                     }
@@ -154,15 +154,15 @@ pipeline {
                         docker save ${DOCKER_IMAGE}:${DOCKER_TAG} | gzip > /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz
                     """
 
-                    sshagent([DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
                             # Transfer image to server
-                            scp -o StrictHostKeyChecking=no \
+                            scp -i \$SSH_KEY -o StrictHostKeyChecking=no \
                                 /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz \
-                                dotori@${DEPLOY_HOST}:/tmp/
+                                \$SSH_USER@${DEPLOY_HOST}:/tmp/
 
                             # Load image on server
-                            ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 echo "Loading Docker image..."
                                 docker load < /tmp/${DOCKER_IMAGE}-${DOCKER_TAG}.tar.gz
 
@@ -187,9 +187,9 @@ pipeline {
             steps {
                 script {
                     echo "Starting new container..."
-                    sshagent([DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 cd ${PROJECT_DIR}
 
                                 # Start container
@@ -216,9 +216,9 @@ pipeline {
             steps {
                 script {
                     echo "Performing health check..."
-                    sshagent([DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 # Wait for application to be ready
                                 for i in {1..30}; do
                                     if curl -f http://localhost:${DEPLOY_PORT}/ > /dev/null 2>&1; then
@@ -256,9 +256,9 @@ pipeline {
                         docker image prune -f
                     """
 
-                    sshagent([DEPLOY_CREDENTIALS]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
                                 # Keep only last 3 tagged images
                                 docker images ${DOCKER_IMAGE} --format "{{.Tag}}" | \
                                     grep -E "^[0-9]+\$" | \
@@ -286,16 +286,22 @@ pipeline {
         failure {
             echo "Deployment failed!"
 
-            sshagent([DEPLOY_CREDENTIALS]) {
-                sh """
-                    ssh -o StrictHostKeyChecking=no dotori@${DEPLOY_HOST} '
-                        cd ${PROJECT_DIR}
-                        echo "Container status:"
-                        docker compose ps
-                        echo "Recent logs:"
-                        docker compose logs --tail=100
-                    ' || true
-                """
+            script {
+                try {
+                    withCredentials([sshUserPrivateKey(credentialsId: DEPLOY_CREDENTIALS, keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                        sh """
+                            ssh -i \$SSH_KEY -o StrictHostKeyChecking=no \$SSH_USER@${DEPLOY_HOST} '
+                                cd ${PROJECT_DIR}
+                                echo "Container status:"
+                                docker compose ps
+                                echo "Recent logs:"
+                                docker compose logs --tail=100
+                            ' || true
+                        """
+                    }
+                } catch (Exception e) {
+                    echo "Failed to get deployment logs: ${e.message}"
+                }
             }
         }
 
