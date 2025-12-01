@@ -55,6 +55,8 @@ def parse_kakaotalk_file(file_path: str) -> list[KakaoTalk]:
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
+                if "저장한 날짜 : " in line.strip():
+                    continue
                 # 타겟 주 내용 수집
                 if is_target_week:
                     chat += line
