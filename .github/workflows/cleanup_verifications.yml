@@ -1,9 +1,9 @@
 name: Cleanup Verifications
 
 on:
-  # 짝수 일자 오전 3시(KST) = UTC 18:00 (전날)
+  # 매주 금요일 오전 3시(KST) = UTC 18:00 (목요일)
   schedule:
-    - cron: '0 18 2,4,6,8,10,12,14,16,18,20,22,24,26,28,30 * *'
+    - cron: '0 18 * * 4'
   # 수동 실행도 가능
   workflow_dispatch:
 
