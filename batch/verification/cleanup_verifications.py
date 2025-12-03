@@ -119,9 +119,10 @@ async def cleanup_verifications() -> dict:
 
                         # 해당 shortcode의 포스트 데이터 확인
                         if shortcode not in posts_data:
-                            # 포스트가 30일 범위 밖이거나 삭제됨 - 레코드 유지
-                            kept_count += 1
-                            logger.debug(f"  ⏩ {verification.username}: 포스트 없음, 유지")
+                            # 포스트가 30일 범위 밖이거나 삭제됨 - 레코드 삭제
+                            await session.delete(verification)
+                            deleted_count += 1
+                            logger.debug(f"  🗑️ {verification.username}: 포스트 없음, 삭제")
                             continue
 
                         post_data = posts_data[shortcode]
