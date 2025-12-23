@@ -1,15 +1,17 @@
-name: Verify Comments
+name: Fetch and Parse KakaoTalk
 
 on:
-  # parse_kakaotalk 후 자동 트리거
-  repository_dispatch:
-    types: [kakaotalk-parsed]
+  # 매주 월요일 오후 13시(KST) 실행 = UTC 04:00
+  schedule:
+    - cron: '0 4 * * 1'
   # 수동 실행도 가능
   workflow_dispatch:
 
 jobs:
-  verify-comments:
+  fetch-and-parse:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
 
     steps:
       - name: Checkout code
@@ -24,27 +26,44 @@ jobs:
         run: |
           pip install --upgrade pip
 
-      - name: Install dependencies
+      - name: Install Gmail dependencies
+        run: |
+          pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+
+      - name: Install project dependencies
         run: |
           pip install -r requirements.txt
 
-      - name: Run verify_comments batch
+      - name: Fetch from Gmail and Parse to Database
+        id: fetch_and_parse
         env:
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          python batch/verification/verify_comments.py
+          python .github/scripts/fetch_and_parse_kakaotalk.py
+
+      - name: Trigger verify_comments workflow
+        if: success()
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: kakaotalk-parsed
+          client-payload: '{"source": "fetch-and-parse-kakaotalk"}'
 
       - name: Send Discord notification
         if: always()
         run: |
           if [ "${{ job.status }}" == "success" ]; then
             COLOR=5763719
-            TITLE="✅ Verify Comments Success"
+            TITLE="✅ KakaoTalk Fetch & Parse Success"
+            DESCRIPTION="Gmail에서 카카오톡 파일을 가져와 파싱 및 DB 저장을 완료했습니다"
           else
             COLOR=15158332
-            TITLE="❌ Verify Comments Failed"
+            TITLE="❌ KakaoTalk Fetch & Parse Failed"
+            DESCRIPTION="카카오톡 가져오기 또는 파싱 중 오류 발생"
           fi
 
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
@@ -52,7 +71,7 @@ jobs:
             -d '{
               "embeds": [{
                 "title": "'"$TITLE"'",
-                "description": "댓글 검증 배치 실행 완료",
+                "description": "'"$DESCRIPTION"'",
                 "color": '"$COLOR"',
                 "fields": [
                   {
