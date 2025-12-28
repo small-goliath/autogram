@@ -45,14 +45,6 @@ jobs:
         run: |
           python .github/scripts/fetch_and_parse_kakaotalk.py
 
-      - name: Trigger verify_comments workflow
-        if: success()
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: kakaotalk-parsed
-          client-payload: '{"source": "fetch-and-parse-kakaotalk"}'
-
       - name: Send Discord notification
         if: always()
         run: |
