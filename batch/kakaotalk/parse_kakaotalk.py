@@ -127,9 +127,7 @@ async def save_to_database(parsed_data: list[KakaoTalk]) -> dict:
 
             # 1. 이번 주 기존 데이터 모두 삭제
             delete_result = await session.execute(
-                delete(RequestByWeek).where(
-                    RequestByWeek.week_start_date == week_start
-                )
+                delete(RequestByWeek)
             )
             deleted_count = delete_result.rowcount
 
