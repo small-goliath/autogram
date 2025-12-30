@@ -7,8 +7,10 @@ from core.schemas.announcement import AnnouncementResponse
 from core.schemas.user import RequestByWeekResponse, UserActionVerificationResponse
 from core.schemas.consumer import ConsumerCreate, ConsumerResponse
 from core.schemas.producer import ProducerCreate, ProducerResponse, UnfollowCheckRequest, UnfollowCheckResponse
-from core.db import announcement_db, user_db, consumer_db, producer_db
+from core.schemas.unfollower_service_user import UnfollowerServiceUserCreate, UnfollowerServiceUserResponse
+from core.db import announcement_db, user_db, consumer_db, producer_db, unfollower_service_user_db, unfollower_db
 from core.services import instagram_service
+from core.crypto import encrypt_data
 
 
 router = APIRouter()
@@ -169,4 +171,112 @@ async def check_unfollowers(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to check unfollowers: {str(e)}"
+        )
+
+
+@router.post("/unfollower-service/register", response_model=UnfollowerServiceUserResponse, status_code=status.HTTP_201_CREATED)
+async def register_unfollower_service_user(
+    data: UnfollowerServiceUserCreate,
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> UnfollowerServiceUserResponse:
+    """
+    Register user for unfollower service.
+
+    Args:
+        data: User registration data
+
+    Returns:
+        Registration confirmation
+
+    Raises:
+        HTTPException: If user already exists or sns_raise_user doesn't exist
+    """
+    # Check if user already registered
+    existing = await unfollower_service_user_db.get_unfollower_service_user_by_username(db, data.username)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이미 등록된 사용자입니다."
+        )
+
+    # Check if sns_raise_user exists
+    sns_user = await user_db.get_sns_user_by_username(db, data.username)
+    if not sns_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SNS 품앗이 사용자로 먼저 등록해주세요."
+        )
+
+    try:
+        # Encrypt sensitive data
+        encrypted_password = encrypt_data(data.password)
+        encrypted_totp_secret = encrypt_data(data.totp_secret) if data.totp_secret else None
+
+        # Create user
+        await unfollower_service_user_db.create_unfollower_service_user(
+            db,
+            data.username,
+            encrypted_password,
+            encrypted_totp_secret
+        )
+        await db.commit()
+
+        return UnfollowerServiceUserResponse(
+            username=data.username,
+            message="언팔로워 검색 서비스에 성공적으로 등록되었습니다."
+        )
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"등록에 실패했습니다: {str(e)}"
+        )
+
+
+@router.get("/unfollowers/{owner}")
+async def get_unfollowers(
+    owner: str,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    """
+    Get unfollowers for a specific owner.
+
+    Args:
+        owner: Instagram username (owner)
+
+    Returns:
+        List of unfollowers
+
+    Raises:
+        HTTPException: If owner not registered in unfollower service
+    """
+    # Check if owner exists in unfollower_service_user
+    service_user = await unfollower_service_user_db.get_unfollower_service_user_by_username(db, owner)
+    if not service_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="언팔로워 서비스에 등록되지 않은 사용자입니다."
+        )
+
+    try:
+        unfollowers = await unfollower_db.get_unfollowers_by_owner(db, owner)
+
+        return {
+            "owner": owner,
+            "count": len(unfollowers),
+            "unfollowers": [
+                {
+                    "unfollower_username": u.unfollower_username,
+                    "unfollower_fullname": u.unfollower_fullname,
+                    "unfollower_profile_url": u.unfollower_profile_url,
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "updated_at": u.updated_at.isoformat() if u.updated_at else None,
+                }
+                for u in unfollowers
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"언팔로워 조회에 실패했습니다: {str(e)}"
         )

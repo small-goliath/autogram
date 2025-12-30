@@ -15,6 +15,8 @@ import type {
   SnsUserFormData,
   UnfollowCheckerFormData,
   UnfollowCheckResult,
+  UnfollowerServiceUserFormData,
+  UnfollowerServiceUserResponse,
   UserActionVerification,
 } from '@/types';
 import axios, { AxiosError, AxiosInstance } from 'axios';
@@ -121,6 +123,11 @@ export const checkUnfollowers = async (data: UnfollowCheckerFormData): Promise<U
   return response.data;
 };
 
+export const registerUnfollowerServiceUser = async (data: UnfollowerServiceUserFormData): Promise<UnfollowerServiceUserResponse> => {
+  const response = await apiClient.post<UnfollowerServiceUserResponse>('/api/unfollower-service/register', data);
+  return response.data;
+};
+
 // Admin API Functions
 
 export const adminLogin = async (data: AdminLoginFormData): Promise<AdminLoginResponse> => {
@@ -193,4 +200,14 @@ export const getErrorMessage = (error: unknown): string => {
     return error.message;
   }
   return 'An unknown error occurred';
+};
+
+// Unfollowers API
+export const getUnfollowers = async (owner: string) => {
+  const response = await fetch(`${API_BASE_URL}/api/unfollowers/${owner}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch unfollowers');
+  }
+  return response.json();
 };

@@ -265,3 +265,49 @@ class Announcement(Base):
         onupdate=get_kst_now,
         nullable=False
     )
+
+
+class UnfollowerServiceUser(Base):
+    """언팔로워 검색 서비스 사용자."""
+    __tablename__ = "unfollower_service_user"
+
+    username: Mapped[str] = mapped_column(
+        String(50),
+        ForeignKey("sns_raise_user.username", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False
+    )
+    password: Mapped[str] = mapped_column(String(150), nullable=False)
+    totp_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Relationship
+    sns_raise_user: Mapped["SnsRaiseUser"] = relationship("SnsRaiseUser")
+
+
+class Unfollower(Base):
+    """언팔로워 목록."""
+    __tablename__ = "unfollowers"
+
+    owner: Mapped[str] = mapped_column(
+        String(50),
+        ForeignKey("sns_raise_user.username", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False
+    )
+    unfollower_username: Mapped[str] = mapped_column(
+        String(50),
+        primary_key=True,
+        nullable=False
+    )
+    unfollower_fullname: Mapped[str] = mapped_column(String(255), nullable=False)
+    unfollower_profile_url: Mapped[str] = mapped_column(String(512), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=get_kst_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=get_kst_now,
+        onupdate=get_kst_now,
+        nullable=False
+    )
+
+    # Relationship
+    owner_user: Mapped["SnsRaiseUser"] = relationship("SnsRaiseUser")

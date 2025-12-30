@@ -97,6 +97,31 @@ export interface UnfollowCheckerFormData {
   verification_code?: string;
 }
 
+export interface UnfollowerServiceUserFormData {
+  username: string;
+  password: string;
+  totp_secret?: string;
+}
+
+export interface UnfollowerServiceUserResponse {
+  username: string;
+  message: string;
+}
+
+export interface Unfollower {
+  unfollower_username: string;
+  unfollower_fullname: string;
+  unfollower_profile_url: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface UnfollowersResponse {
+  owner: string;
+  count: number;
+  unfollowers: Unfollower[];
+}
+
 export interface AdminLoginFormData {
   username: string;
   password: string;

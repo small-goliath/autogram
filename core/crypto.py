@@ -91,3 +91,18 @@ def generate_encryption_key() -> str:
         Base64 encoded encryption key
     """
     return Fernet.generate_key().decode()
+
+
+def generate_totp(totp_secret: str) -> str:
+    """
+    Generate TOTP code from secret.
+
+    Args:
+        totp_secret: Base32 encoded TOTP secret
+
+    Returns:
+        6-digit TOTP code
+    """
+    import pyotp
+    totp = pyotp.TOTP(totp_secret)
+    return totp.now()
