@@ -69,3 +69,30 @@ async def get_unfollowers_by_owner(
         select(Unfollower).where(Unfollower.owner == owner)
     )
     return list(result.scalars().all())
+
+
+async def delete_unfollowers_by_owner(
+    db: AsyncSession,
+    owner: str
+) -> int:
+    """
+    Delete all unfollowers for a specific owner.
+
+    Args:
+        db: Database session
+        owner: Owner username
+
+    Returns:
+        Number of deleted records
+    """
+    result = await db.execute(
+        select(Unfollower).where(Unfollower.owner == owner)
+    )
+    unfollowers = list(result.scalars().all())
+    count = len(unfollowers)
+
+    for unfollower in unfollowers:
+        await db.delete(unfollower)
+
+    await db.flush()
+    return count

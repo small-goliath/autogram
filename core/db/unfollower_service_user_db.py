@@ -81,3 +81,28 @@ async def update_unfollower_service_user(
         await db.flush()
         await db.refresh(user)
     return user
+
+
+async def delete_unfollower_service_user(
+    db: AsyncSession,
+    username: str
+) -> bool:
+    """
+    Delete unfollower service user.
+
+    Args:
+        db: Database session
+        username: Username
+
+    Returns:
+        True if deleted, False if not found
+    """
+    result = await db.execute(
+        select(UnfollowerServiceUser).where(UnfollowerServiceUser.username == username)
+    )
+    user = result.scalar_one_or_none()
+    if user:
+        await db.delete(user)
+        await db.flush()
+        return True
+    return False

@@ -96,11 +96,85 @@ async def register_consumer(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Consumer already registered"
+            detail="이미 등록된 사용자입니다."
         )
 
-    consumer = await consumer_db.create_consumer(db, data.instagram_username)
+    try:
+        consumer = await consumer_db.create_consumer(db, data.instagram_username)
+        await db.commit()
+        return consumer
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"등록에 실패했습니다: {str(e)}"
+        )
+
+
+@router.get("/consumer/{username}", response_model=ConsumerResponse)
+async def get_consumer(
+    username: str,
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> ConsumerResponse:
+    """
+    Get consumer by username.
+
+    Args:
+        username: Instagram username
+
+    Returns:
+        Consumer record
+
+    Raises:
+        HTTPException: If consumer not found
+    """
+    consumer = await consumer_db.get_consumer_by_username(db, username)
+    if not consumer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록되지 않은 사용자입니다."
+        )
     return consumer
+
+
+@router.delete("/consumer/{username}")
+async def delete_consumer(
+    username: str,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    """
+    Delete consumer account.
+
+    Args:
+        username: Instagram username
+
+    Returns:
+        Success message
+
+    Raises:
+        HTTPException: If consumer not found or deletion fails
+    """
+    # Check if consumer exists
+    consumer = await consumer_db.get_consumer_by_username(db, username)
+    if not consumer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록되지 않은 사용자입니다."
+        )
+
+    try:
+        await consumer_db.delete_consumer(db, username)
+        await db.commit()
+
+        return {
+            "message": "계정이 성공적으로 삭제되었습니다."
+        }
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"계정 삭제에 실패했습니다: {str(e)}"
+        )
 
 
 @router.post("/producer", response_model=ProducerResponse, status_code=status.HTTP_201_CREATED)
@@ -118,22 +192,102 @@ async def register_producer(
         Created producer record
 
     Raises:
-        HTTPException: If producer already exists or login fails
+        HTTPException: If producer already exists
     """
-    try:
-        result = await instagram_service.register_producer_account(
-            db,
-            data.instagram_username,
-            data.instagram_password,
-            data.verification_code
-        )
-        # Get the created producer
-        producer = await producer_db.get_producer_by_username(db, data.instagram_username)
-        return producer
-    except Exception as e:
+    # Check if producer already exists
+    existing = await producer_db.get_producer_by_username(db, data.instagram_username)
+    if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="이미 등록된 사용자입니다."
+        )
+
+    try:
+        # Encrypt sensitive data
+        encrypted_password = encrypt_data(data.instagram_password)
+        encrypted_totp_secret = encrypt_data(data.totp_secret) if data.totp_secret else None
+
+        # Create producer
+        producer = await producer_db.create_producer(
+            db,
+            data.instagram_username,
+            encrypted_password,
+            encrypted_totp_secret
+        )
+        await db.commit()
+
+        return producer
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"등록에 실패했습니다: {str(e)}"
+        )
+
+
+@router.get("/producer/{username}", response_model=ProducerResponse)
+async def get_producer(
+    username: str,
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> ProducerResponse:
+    """
+    Get producer by username.
+
+    Args:
+        username: Instagram username
+
+    Returns:
+        Producer record
+
+    Raises:
+        HTTPException: If producer not found
+    """
+    producer = await producer_db.get_producer_by_username(db, username)
+    if not producer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록되지 않은 사용자입니다."
+        )
+    return producer
+
+
+@router.delete("/producer/{username}")
+async def delete_producer(
+    username: str,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    """
+    Delete producer account.
+
+    Args:
+        username: Instagram username
+
+    Returns:
+        Success message
+
+    Raises:
+        HTTPException: If producer not found or deletion fails
+    """
+    # Check if producer exists
+    producer = await producer_db.get_producer_by_username(db, username)
+    if not producer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="등록되지 않은 사용자입니다."
+        )
+
+    try:
+        await producer_db.delete_producer(db, username)
+        await db.commit()
+
+        return {
+            "message": "계정이 성공적으로 삭제되었습니다."
+        }
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"계정 삭제에 실패했습니다: {str(e)}"
         )
 
 
@@ -279,4 +433,50 @@ async def get_unfollowers(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"언팔로워 조회에 실패했습니다: {str(e)}"
+        )
+
+
+@router.delete("/unfollower-service/{username}")
+async def delete_unfollower_service_account(
+    username: str,
+    db: Annotated[AsyncSession, Depends(get_db)]
+):
+    """
+    Delete unfollower service account and all associated unfollowers.
+
+    Args:
+        username: Username to delete
+
+    Returns:
+        Success message
+
+    Raises:
+        HTTPException: If user not found or deletion fails
+    """
+    # Check if user exists
+    service_user = await unfollower_service_user_db.get_unfollower_service_user_by_username(db, username)
+    if not service_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="언팔로워 서비스에 등록되지 않은 사용자입니다."
+        )
+
+    try:
+        # Delete all unfollowers first
+        unfollowers_count = await unfollower_db.delete_unfollowers_by_owner(db, username)
+
+        # Delete service user
+        await unfollower_service_user_db.delete_unfollower_service_user(db, username)
+
+        await db.commit()
+
+        return {
+            "message": f"계정이 성공적으로 삭제되었습니다. (언팔로워 {unfollowers_count}명 삭제됨)",
+            "deleted_unfollowers_count": unfollowers_count
+        }
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"계정 삭제에 실패했습니다: {str(e)}"
         )

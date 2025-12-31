@@ -1,21 +1,25 @@
 'use client';
 
 import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { getUnfollowers } from '@/lib/api';
+import { deleteUnfollowerServiceUser, getErrorMessage, getUnfollowers } from '@/lib/api';
 import type { Unfollower, UnfollowersResponse } from '@/types';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function UnfollowerListPage() {
   const params = useParams();
+  const router = useRouter();
   const owner = params.owner as string;
 
   const [data, setData] = useState<UnfollowersResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [deleteSuccess, setDeleteSuccess] = useState('');
 
   useEffect(() => {
     const fetchUnfollowers = async () => {
@@ -35,6 +39,30 @@ export default function UnfollowerListPage() {
       fetchUnfollowers();
     }
   }, [owner]);
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      `정말로 @${owner} 계정을 삭제하시겠습니까?\n\n등록된 계정 정보와 모든 언팔로워 목록이 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      setError('');
+      const response = await deleteUnfollowerServiceUser(owner);
+      setDeleteSuccess(response.message);
+
+      // Redirect to main page after 2 seconds
+      setTimeout(() => {
+        router.push('/unfollow-checker');
+      }, 2000);
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -60,17 +88,37 @@ export default function UnfollowerListPage() {
             ← 돌아가기
           </Link>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            🔍 언팔로워 목록
-          </h1>
-          <p className="text-lg text-gray-600">
-            @{owner}님의 언팔로워
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-3">
+                🔍 언팔로워 목록
+              </h1>
+              <p className="text-lg text-gray-600">
+                @{owner}님의 언팔로워
+              </p>
+            </div>
+            {data && (
+              <Button
+                variant="danger"
+                onClick={handleDelete}
+                isLoading={isDeleting}
+                className="ml-4"
+              >
+                계정 삭제
+              </Button>
+            )}
+          </div>
         </div>
 
         {error && (
           <Alert variant="error" className="mb-6">
             {error}
+          </Alert>
+        )}
+
+        {deleteSuccess && (
+          <Alert variant="success" className="mb-6">
+            {deleteSuccess}
           </Alert>
         )}
 

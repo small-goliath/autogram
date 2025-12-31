@@ -21,9 +21,9 @@ from .utils import get_kst_now
 
 class StatusEnum(str, PyEnum):
     """Status enum for consumer and producer tables."""
-    PENDING = "pending"
-    ACTIVE = "active"
-    INACTIVE = "inactive"
+    pending = "pending"
+    active = "active"
+    inactive = "inactive"
 
 
 class Admin(Base):
@@ -208,11 +208,10 @@ class Consumer(Base):
     """AI 자동 댓글 받기 신청자."""
     __tablename__ = "consumer"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    instagram_username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    instagram_username: Mapped[str] = mapped_column(String(100), primary_key=True, nullable=False)
     status: Mapped[StatusEnum] = mapped_column(
         Enum(StatusEnum),
-        default=StatusEnum.PENDING,
+        default=StatusEnum.pending,
         nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=get_kst_now, nullable=False)
@@ -228,14 +227,12 @@ class Producer(Base):
     """AI 자동 댓글 달기 신청자 (instagrapi용)."""
     __tablename__ = "producer"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    instagram_username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    instagram_username: Mapped[str] = mapped_column(String(100), primary_key=True, nullable=False)
     instagram_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    verification_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    session_data: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[StatusEnum] = mapped_column(
         Enum(StatusEnum),
-        default=StatusEnum.PENDING,
+        default=StatusEnum.pending,
         nullable=False
     )
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

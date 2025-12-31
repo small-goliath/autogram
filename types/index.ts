@@ -47,15 +47,18 @@ export interface Helper {
 }
 
 export interface Consumer {
-  id: number;
   instagram_username: string;
+  status: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Producer {
-  id: number;
   instagram_username: string;
+  status: string;
+  last_used_at?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface UnfollowCheckResult {
@@ -88,7 +91,7 @@ export interface ConsumerFormData {
 export interface ProducerFormData {
   instagram_username: string;
   instagram_password: string;
-  verification_code?: string;
+  totp_secret?: string;
 }
 
 export interface UnfollowCheckerFormData {

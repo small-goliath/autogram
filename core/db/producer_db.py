@@ -43,8 +43,7 @@ async def create_producer(
     db: AsyncSession,
     instagram_username: str,
     instagram_password: str,
-    verification_code: str | None = None,
-    session_data: str | None = None
+    totp_secret: str | None = None
 ) -> Producer:
     """
     Create new producer.
@@ -53,8 +52,7 @@ async def create_producer(
         db: Database session
         instagram_username: Instagram username
         instagram_password: Encrypted Instagram password
-        verification_code: Optional 2FA verification code
-        session_data: Encrypted session data
+        totp_secret: Optional encrypted TOTP secret for 2FA
 
     Returns:
         Created Producer instance
@@ -62,8 +60,7 @@ async def create_producer(
     producer = Producer(
         instagram_username=instagram_username,
         instagram_password=instagram_password,
-        verification_code=verification_code,
-        session_data=session_data,
+        totp_secret=totp_secret,
     )
     db.add(producer)
     await db.flush()
@@ -71,27 +68,47 @@ async def create_producer(
     return producer
 
 
-async def update_producer_session(
+async def update_producer_last_used(
     db: AsyncSession,
-    producer_id: int,
-    session_data: str
+    instagram_username: str
 ) -> Producer | None:
     """
-    Update producer session data.
+    Update producer last used timestamp.
 
     Args:
         db: Database session
-        producer_id: Producer ID
-        session_data: Encrypted session data
+        instagram_username: Instagram username
 
     Returns:
         Updated Producer instance or None if not found
     """
-    result = await db.execute(select(Producer).where(Producer.id == producer_id))
+    result = await db.execute(select(Producer).where(Producer.instagram_username == instagram_username))
     producer = result.scalar_one_or_none()
     if producer:
-        producer.session_data = session_data
         producer.last_used_at = datetime.utcnow()
         await db.flush()
         await db.refresh(producer)
     return producer
+
+
+async def delete_producer(
+    db: AsyncSession,
+    instagram_username: str
+) -> bool:
+    """
+    Delete producer.
+
+    Args:
+        db: Database session
+        instagram_username: Instagram username
+
+    Returns:
+        True if deleted, False if not found
+    """
+    result = await db.execute(select(Producer).where(Producer.instagram_username == instagram_username))
+    producer = result.scalar_one_or_none()
+    if producer:
+        await db.delete(producer)
+        await db.flush()
+        return True
+    return False

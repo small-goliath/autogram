@@ -113,8 +113,28 @@ export const createConsumer = async (data: ConsumerFormData): Promise<Consumer> 
   return response.data;
 };
 
+export const getConsumer = async (username: string): Promise<Consumer> => {
+  const response = await apiClient.get<Consumer>(`/api/consumer/${username}`);
+  return response.data;
+};
+
+export const deleteConsumer = async (username: string) => {
+  const response = await apiClient.delete(`/api/consumer/${username}`);
+  return response.data;
+};
+
 export const createProducer = async (data: ProducerFormData): Promise<Producer> => {
   const response = await apiClient.post<Producer>('/api/producer', data);
+  return response.data;
+};
+
+export const getProducer = async (username: string): Promise<Producer> => {
+  const response = await apiClient.get<Producer>(`/api/producer/${username}`);
+  return response.data;
+};
+
+export const deleteProducer = async (username: string) => {
+  const response = await apiClient.delete(`/api/producer/${username}`);
   return response.data;
 };
 
@@ -210,4 +230,9 @@ export const getUnfollowers = async (owner: string) => {
     throw new Error(error.detail || 'Failed to fetch unfollowers');
   }
   return response.json();
+};
+
+export const deleteUnfollowerServiceUser = async (username: string) => {
+  const response = await apiClient.delete(`/api/unfollower-service/${username}`);
+  return response.data;
 };

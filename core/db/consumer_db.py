@@ -35,3 +35,23 @@ async def create_consumer(db: AsyncSession, instagram_username: str) -> Consumer
     await db.flush()
     await db.refresh(consumer)
     return consumer
+
+
+async def delete_consumer(db: AsyncSession, instagram_username: str) -> bool:
+    """
+    Delete consumer.
+
+    Args:
+        db: Database session
+        instagram_username: Instagram username
+
+    Returns:
+        True if deleted, False if not found
+    """
+    result = await db.execute(select(Consumer).where(Consumer.instagram_username == instagram_username))
+    consumer = result.scalar_one_or_none()
+    if consumer:
+        await db.delete(consumer)
+        await db.flush()
+        return True
+    return False

@@ -11,13 +11,11 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
-# 프로젝트 루트를 Python 경로에 추가
+from utils.parse_kakaotalk import parse_kakaotalk_content, save_to_database
+from utils.logger import setup_logger, log_batch_start, log_batch_end
+from utils.discord_notifier import DiscordNotifier
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-from batch.kakaotalk.parse_kakaotalk import parse_kakaotalk_content, save_to_database
-from batch.utils.logger import setup_logger, log_batch_start, log_batch_end
-from batch.utils.discord_notifier import DiscordNotifier
-
 
 logger = setup_logger("fetch_and_parse_kakaotalk")
 
