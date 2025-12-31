@@ -1,4 +1,5 @@
 """Database access layer for SNS user operations."""
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import SnsRaiseUser, RequestByWeek, UserActionVerification
@@ -14,15 +15,14 @@ async def get_all_sns_users(db: AsyncSession) -> list[SnsRaiseUser]:
     Returns:
         List of SnsRaiseUser instances
     """
-    result = await db.execute(select(SnsRaiseUser).order_by(SnsRaiseUser.created_at.desc()))
+    result = await db.execute(
+        select(SnsRaiseUser).order_by(SnsRaiseUser.created_at.desc())
+    )
     return list(result.scalars().all())
 
 
 async def get_sns_users_paginated(
-    db: AsyncSession,
-    limit: int = 20,
-    offset: int = 0,
-    search: str = ""
+    db: AsyncSession, limit: int = 20, offset: int = 0, search: str = ""
 ) -> tuple[list[SnsRaiseUser], int]:
     """
     Get SNS users with pagination and search.
@@ -68,7 +68,9 @@ async def get_sns_user_by_id(db: AsyncSession, user_id: int) -> SnsRaiseUser | N
     return result.scalar_one_or_none()
 
 
-async def get_sns_user_by_username(db: AsyncSession, username: str) -> SnsRaiseUser | None:
+async def get_sns_user_by_username(
+    db: AsyncSession, username: str
+) -> SnsRaiseUser | None:
     """
     Get SNS user by username.
 
@@ -79,7 +81,9 @@ async def get_sns_user_by_username(db: AsyncSession, username: str) -> SnsRaiseU
     Returns:
         SnsRaiseUser instance or None if not found
     """
-    result = await db.execute(select(SnsRaiseUser).where(SnsRaiseUser.username == username))
+    result = await db.execute(
+        select(SnsRaiseUser).where(SnsRaiseUser.username == username)
+    )
     return result.scalar_one_or_none()
 
 
@@ -101,7 +105,9 @@ async def create_sns_user(db: AsyncSession, username: str) -> SnsRaiseUser:
     return user
 
 
-async def update_sns_user(db: AsyncSession, user_id: int, username: str) -> SnsRaiseUser | None:
+async def update_sns_user(
+    db: AsyncSession, user_id: int, username: str
+) -> SnsRaiseUser | None:
     """
     Update SNS user.
 
@@ -141,10 +147,7 @@ async def delete_sns_user(db: AsyncSession, user_id: int) -> bool:
 
 
 async def get_requests_by_week(
-    db: AsyncSession,
-    username: str | None = None,
-    limit: int = 100,
-    offset: int = 0
+    db: AsyncSession, username: str | None = None, limit: int = 100, offset: int = 0
 ) -> list[RequestByWeek]:
     """
     Get weekly requests with optional username filter.
@@ -169,10 +172,7 @@ async def get_requests_by_week(
 
 
 async def get_user_action_verifications(
-    db: AsyncSession,
-    username: str | None = None,
-    limit: int = 100,
-    offset: int = 0
+    db: AsyncSession, username: str | None = None, limit: int = 100, offset: int = 0
 ) -> list[UserActionVerification]:
     """
     Get user action verifications with optional username filter.
@@ -186,7 +186,9 @@ async def get_user_action_verifications(
     Returns:
         List of UserActionVerification instances
     """
-    query = select(UserActionVerification).order_by(UserActionVerification.created_at.desc())
+    query = select(UserActionVerification).order_by(
+        UserActionVerification.created_at.desc()
+    )
 
     if username:
         query = query.where(UserActionVerification.username == username)

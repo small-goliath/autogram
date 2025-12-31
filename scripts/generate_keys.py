@@ -1,6 +1,7 @@
 """
 Utility script to generate SECRET_KEY and ENCRYPTION_KEY for .env file.
 """
+
 import secrets
 from cryptography.fernet import Fernet
 

@@ -5,8 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { logout } from '@/lib/auth';
 
 const adminNavLinks = [
-  { href: '/admin/users', label: 'SNS 품앗이 사용자' },
-  { href: '/admin/helpers', label: '헬퍼 계정' }
+  { href: '/admin/users', label: 'SNS 품앗이 사용자' }
 ];
 
 export default function AdminNavigation() {

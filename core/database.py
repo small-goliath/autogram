@@ -2,6 +2,7 @@
 Database connection and session management.
 Provides async SQLAlchemy engine and session maker.
 """
+
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -15,6 +16,7 @@ from .config import get_settings
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models."""
+
     pass
 
 
@@ -39,8 +41,8 @@ def get_engine() -> AsyncEngine:
             settings.DATABASE_URL,
             echo=settings.DEBUG,
             pool_pre_ping=True,
-            pool_size=5,       # 무료 플랜: API + 배치 동시 실행 가능하도록 작게 설정
-            max_overflow=0,    # Session Mode에서는 추가 연결 생성 불가
+            pool_size=5,  # 무료 플랜: API + 배치 동시 실행 가능하도록 작게 설정
+            max_overflow=0,  # Session Mode에서는 추가 연결 생성 불가
         )
     return _engine
 

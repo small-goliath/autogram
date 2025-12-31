@@ -42,7 +42,7 @@ def create_application() -> FastAPI:
         return {
             "message": "Welcome to Autogram API",
             "docs": "/docs",
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
 
     return app

@@ -1,4 +1,5 @@
 """FastAPI dependencies for authentication and authorization."""
+
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -12,7 +13,7 @@ security = HTTPBearer()
 
 async def get_current_admin(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict:
     """
     Verify JWT token and return current admin info.
@@ -46,6 +47,7 @@ async def get_current_admin(
         )
 
     from core.db import admin_db
+
     admin = await admin_db.get_admin_by_username(db, username)
     if admin is None:
         raise HTTPException(

@@ -1,6 +1,7 @@
 """
 KakaoTalk 대화 파일을 파싱하여 request_by_week 테이블에 저장하는 배치
 """
+
 import os
 import sys
 import re
@@ -20,6 +21,7 @@ logger = setup_logger("parse_kakaotalk")
 
 class KakaoTalk(BaseModel):
     """카카오톡에서 파싱된 데이터"""
+
     username: str
     link: str
 
@@ -43,7 +45,7 @@ def parse_kakaotalk_content(content: str) -> list[KakaoTalk]:
     chat = ""
 
     try:
-        for line in content.split('\n'):
+        for line in content.split("\n"):
             if "저장한 날짜 : " in line.strip():
                 continue
 
@@ -54,7 +56,7 @@ def parse_kakaotalk_content(content: str) -> list[KakaoTalk]:
 
             # 타겟 주 내용 수집
             if is_target_week:
-                chat += line + '\n'
+                chat += line + "\n"
 
         if not is_target_week:
             logger.warning(f"⚠️ 타겟 주({formatted_start})를 찾을 수 없습니다.")
@@ -74,7 +76,7 @@ def parse_kakaotalk_content(content: str) -> list[KakaoTalk]:
             (?:(?!20\d{2}\.\s*\d{1,2}\.\s*\d{1,2}).)*?  # 날짜가 아닌 0개 이상의 문자열
             /(?P<digit>\d+)
             """,
-            re.MULTILINE | re.VERBOSE
+            re.MULTILINE | re.VERBOSE,
         )
 
         kakaotalk_parsed = []
@@ -85,18 +87,15 @@ def parse_kakaotalk_content(content: str) -> list[KakaoTalk]:
             nickname = str(match[1]).strip()
 
             # '@' 뒤의 username 추출
-            if '@' in nickname:
-                username = nickname.split('@')[1]
+            if "@" in nickname:
+                username = nickname.split("@")[1]
             else:
                 # '@'가 없으면 전체를 username으로 사용
                 username = nickname
 
             link = str(match[2]).strip()
 
-            kakaotalk_parsed.append(KakaoTalk(
-                username=username,
-                link=link
-            ))
+            kakaotalk_parsed.append(KakaoTalk(username=username, link=link))
 
             logger.debug(f"  📝 파싱: {username} -> {link}")
 
@@ -125,17 +124,13 @@ async def save_to_database(parsed_data: list[KakaoTalk]) -> dict:
             week_start = get_week_start_date()
 
             # 1. 이번 주 기존 데이터 모두 삭제
-            delete_result = await session.execute(
-                delete(RequestByWeek)
-            )
+            delete_result = await session.execute(delete(RequestByWeek))
             deleted_count = delete_result.rowcount
 
             logger.info(f"🗑️ 이번 주 기존 데이터 {deleted_count}개 삭제")
 
             # 2. 유효한 사용자 목록 조회
-            result = await session.execute(
-                select(SnsRaiseUser.username)
-            )
+            result = await session.execute(select(SnsRaiseUser.username))
             valid_users = {row[0] for row in result.fetchall()}
             logger.info(f"👥 등록된 사용자 수: {len(valid_users)}")
 
@@ -154,7 +149,7 @@ async def save_to_database(parsed_data: list[KakaoTalk]) -> dict:
                 request = RequestByWeek(
                     username=item.username,
                     instagram_link=item.link,
-                    week_start_date=week_start
+                    week_start_date=week_start,
                 )
                 session.add(request)
                 saved_count += 1
@@ -162,13 +157,15 @@ async def save_to_database(parsed_data: list[KakaoTalk]) -> dict:
 
             await session.commit()
 
-            logger.info(f"📊 저장 완료: {deleted_count}개 삭제, {saved_count}개 저장, {invalid_user_count}개 미등록 사용자")
+            logger.info(
+                f"📊 저장 완료: {deleted_count}개 삭제, {saved_count}개 저장, {invalid_user_count}개 미등록 사용자"
+            )
 
             return {
                 "총 파싱": len(parsed_data),
                 "삭제된 기존 데이터": deleted_count,
                 "저장 성공": saved_count,
-                "미등록 사용자": invalid_user_count
+                "미등록 사용자": invalid_user_count,
             }
         except Exception:
             await session.rollback()

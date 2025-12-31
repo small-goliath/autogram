@@ -37,15 +37,6 @@ export interface SnsRaiseUser {
   updated_at: string;
 }
 
-export interface Helper {
-  id: number;
-  instagram_username: string;
-  is_active: boolean;
-  last_used_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Consumer {
   instagram_username: string;
   status: string;
@@ -59,15 +50,6 @@ export interface Producer {
   last_used_at?: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface UnfollowCheckResult {
-  following: string[];
-  followers: string[];
-  not_following_back: string[];
-  total_following: number;
-  total_followers: number;
-  total_unfollowers: number;
 }
 
 export interface AdminLoginResponse {
@@ -92,12 +74,6 @@ export interface ProducerFormData {
   instagram_username: string;
   instagram_password: string;
   totp_secret?: string;
-}
-
-export interface UnfollowCheckerFormData {
-  instagram_username: string;
-  instagram_password: string;
-  verification_code?: string;
 }
 
 export interface UnfollowerServiceUserFormData {
@@ -132,12 +108,6 @@ export interface AdminLoginFormData {
 
 export interface SnsUserFormData {
   username: string;
-}
-
-export interface HelperFormData {
-  instagram_username: string;
-  instagram_password: string;
-  verification_code?: string;
 }
 
 export interface AnnouncementFormData {

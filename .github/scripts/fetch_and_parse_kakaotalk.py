@@ -1,6 +1,7 @@
 """
 Gmail에서 카카오톡 채팅 파일을 다운로드하고 파싱하여 DB에 저장하는 통합 배치 스크립트
 """
+
 import os
 import sys
 import base64
@@ -22,8 +23,8 @@ logger = setup_logger("fetch_and_parse_kakaotalk")
 
 def get_gmail_service():
     """Gmail API 서비스 생성"""
-    creds_json = os.environ.get('GMAIL_CREDENTIALS')
-    token_json = os.environ.get('GMAIL_TOKEN')
+    creds_json = os.environ.get("GMAIL_CREDENTIALS")
+    token_json = os.environ.get("GMAIL_TOKEN")
 
     if not creds_json or not token_json:
         raise Exception("Gmail credentials not found in environment variables")
@@ -34,7 +35,7 @@ def get_gmail_service():
         creds.refresh(Request())
         print(f"::set-output name=new_token::{creds.to_json()}")
 
-    return build('gmail', 'v1', credentials=creds)
+    return build("gmail", "v1", credentials=creds)
 
 
 def search_latest_kakaotalk_email(service):
@@ -42,38 +43,35 @@ def search_latest_kakaotalk_email(service):
     week_ago = datetime.now() - timedelta(days=7)
     query = f'subject:"Kakaotalk_Chat_sns키우기" after:{week_ago.strftime("%Y/%m/%d")}'
 
-    results = service.users().messages().list(
-        userId='me',
-        q=query,
-        maxResults=1
-    ).execute()
+    results = (
+        service.users().messages().list(userId="me", q=query, maxResults=1).execute()
+    )
 
-    messages = results.get('messages', [])
+    messages = results.get("messages", [])
     if not messages:
         logger.warning("⚠️ 최근 카카오톡 메일을 찾을 수 없습니다")
         return None
 
-    return messages[0]['id']
+    return messages[0]["id"]
 
 
 def download_attachment(service, message_id):
     """메일에서 zip 첨부파일 다운로드"""
-    message = service.users().messages().get(
-        userId='me',
-        id=message_id
-    ).execute()
+    message = service.users().messages().get(userId="me", id=message_id).execute()
 
-    for part in message['payload'].get('parts', []):
-        if part.get('filename', '').endswith('.zip'):
-            attachment_id = part['body'].get('attachmentId')
+    for part in message["payload"].get("parts", []):
+        if part.get("filename", "").endswith(".zip"):
+            attachment_id = part["body"].get("attachmentId")
             if attachment_id:
-                attachment = service.users().messages().attachments().get(
-                    userId='me',
-                    messageId=message_id,
-                    id=attachment_id
-                ).execute()
+                attachment = (
+                    service.users()
+                    .messages()
+                    .attachments()
+                    .get(userId="me", messageId=message_id, id=attachment_id)
+                    .execute()
+                )
 
-                data = attachment['data']
+                data = attachment["data"]
                 file_data = base64.urlsafe_b64decode(data)
                 return file_data
 
@@ -84,7 +82,7 @@ def extract_txt_from_zip(zip_data):
     """zip 파일에서 txt 파일 추출"""
     with zipfile.ZipFile(io.BytesIO(zip_data)) as zip_file:
         file_list = zip_file.namelist()
-        txt_files = [f for f in file_list if f.endswith('.txt')]
+        txt_files = [f for f in file_list if f.endswith(".txt")]
 
         if not txt_files:
             raise Exception("No txt file found in zip")
@@ -92,9 +90,7 @@ def extract_txt_from_zip(zip_data):
         txt_filename = txt_files[0]
         txt_content = zip_file.read(txt_filename)
 
-        return txt_content.decode('utf-8')
-
-
+        return txt_content.decode("utf-8")
 
 
 async def main():
@@ -157,10 +153,11 @@ async def main():
             batch_name="카카오톡 가져오기 및 파싱",
             success=success,
             details=details,
-            error_message=error_message
+            error_message=error_message,
         )
 
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

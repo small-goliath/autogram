@@ -1,10 +1,10 @@
 """Pytest configuration and fixtures."""
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from api.index import app
 from core.database import Base, get_db
-from core.config import get_settings
 
 
 # Test database URL (use separate test database)
@@ -15,6 +15,7 @@ TEST_DATABASE_URL = "mysql+aiomysql://test:test@localhost:3306/autogram_test"
 def event_loop():
     """Create event loop for async tests."""
     import asyncio
+
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()

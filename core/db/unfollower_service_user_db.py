@@ -1,12 +1,12 @@
 """Database access layer for unfollower service user operations."""
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import UnfollowerServiceUser
 
 
 async def get_unfollower_service_user_by_username(
-    db: AsyncSession,
-    username: str
+    db: AsyncSession, username: str
 ) -> UnfollowerServiceUser | None:
     """
     Get unfollower service user by username.
@@ -25,10 +25,7 @@ async def get_unfollower_service_user_by_username(
 
 
 async def create_unfollower_service_user(
-    db: AsyncSession,
-    username: str,
-    password: str,
-    totp_secret: str | None = None
+    db: AsyncSession, username: str, password: str, totp_secret: str | None = None
 ) -> UnfollowerServiceUser:
     """
     Create new unfollower service user.
@@ -43,9 +40,7 @@ async def create_unfollower_service_user(
         Created UnfollowerServiceUser instance
     """
     user = UnfollowerServiceUser(
-        username=username,
-        password=password,
-        totp_secret=totp_secret
+        username=username, password=password, totp_secret=totp_secret
     )
     db.add(user)
     await db.flush()
@@ -54,10 +49,7 @@ async def create_unfollower_service_user(
 
 
 async def update_unfollower_service_user(
-    db: AsyncSession,
-    username: str,
-    password: str,
-    totp_secret: str | None = None
+    db: AsyncSession, username: str, password: str, totp_secret: str | None = None
 ) -> UnfollowerServiceUser | None:
     """
     Update unfollower service user credentials.
@@ -83,10 +75,7 @@ async def update_unfollower_service_user(
     return user
 
 
-async def delete_unfollower_service_user(
-    db: AsyncSession,
-    username: str
-) -> bool:
+async def delete_unfollower_service_user(db: AsyncSession, username: str) -> bool:
     """
     Delete unfollower service user.
 

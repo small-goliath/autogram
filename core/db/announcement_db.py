@@ -1,4 +1,5 @@
 """Database access layer for announcement operations."""
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import Announcement
@@ -16,7 +17,7 @@ async def get_active_announcements(db: AsyncSession) -> list[Announcement]:
     """
     result = await db.execute(
         select(Announcement)
-        .where(Announcement.is_active == True)
+        .where(Announcement.is_active)
         .order_by(Announcement.created_at.desc())
     )
     return list(result.scalars().all())
@@ -32,11 +33,15 @@ async def get_all_announcements(db: AsyncSession) -> list[Announcement]:
     Returns:
         List of Announcement instances
     """
-    result = await db.execute(select(Announcement).order_by(Announcement.created_at.desc()))
+    result = await db.execute(
+        select(Announcement).order_by(Announcement.created_at.desc())
+    )
     return list(result.scalars().all())
 
 
-async def get_announcement_by_id(db: AsyncSession, announcement_id: int) -> Announcement | None:
+async def get_announcement_by_id(
+    db: AsyncSession, announcement_id: int
+) -> Announcement | None:
     """
     Get announcement by ID.
 
@@ -47,7 +52,9 @@ async def get_announcement_by_id(db: AsyncSession, announcement_id: int) -> Anno
     Returns:
         Announcement instance or None if not found
     """
-    result = await db.execute(select(Announcement).where(Announcement.id == announcement_id))
+    result = await db.execute(
+        select(Announcement).where(Announcement.id == announcement_id)
+    )
     return result.scalar_one_or_none()
 
 
@@ -57,7 +64,7 @@ async def create_announcement(
     content: str,
     kakao_openchat_link: str | None = None,
     kakao_qr_code_url: str | None = None,
-    is_active: bool = True
+    is_active: bool = True,
 ) -> Announcement:
     """
     Create new announcement.
@@ -93,7 +100,7 @@ async def update_announcement(
     content: str | None = None,
     kakao_openchat_link: str | None = None,
     kakao_qr_code_url: str | None = None,
-    is_active: bool | None = None
+    is_active: bool | None = None,
 ) -> Announcement | None:
     """
     Update announcement.

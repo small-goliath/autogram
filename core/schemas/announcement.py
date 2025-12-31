@@ -1,10 +1,12 @@
 """Pydantic schemas for announcement-related operations."""
+
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
 
 class AnnouncementCreate(BaseModel):
     """Announcement creation request."""
+
     title: str = Field(..., min_length=1, max_length=200)
     content: str = Field(..., min_length=1)
     kakao_openchat_link: str | None = Field(None, max_length=500)
@@ -14,6 +16,7 @@ class AnnouncementCreate(BaseModel):
 
 class AnnouncementUpdate(BaseModel):
     """Announcement update request."""
+
     title: str | None = Field(None, min_length=1, max_length=200)
     content: str | None = Field(None, min_length=1)
     kakao_openchat_link: str | None = Field(None, max_length=500)
@@ -23,6 +26,7 @@ class AnnouncementUpdate(BaseModel):
 
 class AnnouncementResponse(BaseModel):
     """Announcement response model."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int

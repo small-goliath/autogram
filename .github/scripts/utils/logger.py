@@ -1,6 +1,7 @@
 """
 Logging configuration for batch jobs
 """
+
 import logging
 import sys
 from datetime import datetime
@@ -30,8 +31,8 @@ def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
 
     # 포맷터
     formatter = logging.Formatter(
-        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     console_handler.setFormatter(formatter)
 

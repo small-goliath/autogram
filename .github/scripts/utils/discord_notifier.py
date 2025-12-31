@@ -1,6 +1,7 @@
 """
 Discord webhook notification utility
 """
+
 import os
 import requests
 from typing import Optional
@@ -23,7 +24,7 @@ class DiscordNotifier:
         description: str,
         color: int = 0x5865F2,  # Discord Blurple
         fields: Optional[list[dict]] = None,
-        success: bool = True
+        success: bool = True,
     ) -> bool:
         """
         Discord로 메시지를 전송합니다.
@@ -53,25 +54,16 @@ class DiscordNotifier:
             "description": description,
             "color": color,
             "timestamp": datetime.utcnow().isoformat(),
-            "footer": {
-                "text": "Autogram Batch System"
-            }
+            "footer": {"text": "Autogram Batch System"},
         }
 
         if fields:
             embed["fields"] = fields
 
-        payload = {
-            "username": "Autogram Bot",
-            "embeds": [embed]
-        }
+        payload = {"username": "Autogram Bot", "embeds": [embed]}
 
         try:
-            response = requests.post(
-                self.webhook_url,
-                json=payload,
-                timeout=10
-            )
+            response = requests.post(self.webhook_url, json=payload, timeout=10)
             response.raise_for_status()
             print(f"✅ Discord 알림 전송 완료: {title}")
             return True
@@ -84,7 +76,7 @@ class DiscordNotifier:
         batch_name: str,
         success: bool,
         details: dict,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> bool:
         """
         배치 작업 결과를 Discord로 전송합니다.
@@ -107,15 +99,8 @@ class DiscordNotifier:
 
         fields = []
         for key, value in details.items():
-            fields.append({
-                "name": key,
-                "value": str(value),
-                "inline": True
-            })
+            fields.append({"name": key, "value": str(value), "inline": True})
 
         return self.send_message(
-            title=title,
-            description=description,
-            fields=fields,
-            success=success
+            title=title, description=description, fields=fields, success=success
         )

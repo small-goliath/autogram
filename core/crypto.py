@@ -2,6 +2,7 @@
 Cryptography utilities for encrypting/decrypting sensitive data.
 Uses Fernet symmetric encryption for passwords and session data.
 """
+
 from cryptography.fernet import Fernet
 from passlib.context import CryptContext
 from .config import get_settings
@@ -104,5 +105,6 @@ def generate_totp(totp_secret: str) -> str:
         6-digit TOTP code
     """
     import pyotp
+
     totp = pyotp.TOTP(totp_secret)
     return totp.now()

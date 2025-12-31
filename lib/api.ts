@@ -6,15 +6,11 @@ import type {
   APIError,
   Consumer,
   ConsumerFormData,
-  Helper,
-  HelperFormData,
   Producer,
   ProducerFormData,
   RequestByWeek,
   SnsRaiseUser,
   SnsUserFormData,
-  UnfollowCheckerFormData,
-  UnfollowCheckResult,
   UnfollowerServiceUserFormData,
   UnfollowerServiceUserResponse,
   UserActionVerification,
@@ -138,11 +134,6 @@ export const deleteProducer = async (username: string) => {
   return response.data;
 };
 
-export const checkUnfollowers = async (data: UnfollowCheckerFormData): Promise<UnfollowCheckResult> => {
-  const response = await apiClient.post<UnfollowCheckResult>('/api/unfollow-checker', data);
-  return response.data;
-};
-
 export const registerUnfollowerServiceUser = async (data: UnfollowerServiceUserFormData): Promise<UnfollowerServiceUserResponse> => {
   const response = await apiClient.post<UnfollowerServiceUserResponse>('/api/unfollower-service/register', data);
   return response.data;
@@ -172,20 +163,6 @@ export const updateSnsUser = async (id: number, data: SnsUserFormData): Promise<
 
 export const deleteSnsUser = async (id: number): Promise<void> => {
   await apiClient.delete(`/api/admin/sns-users/${id}`);
-};
-
-export const getHelpers = async (): Promise<Helper[]> => {
-  const response = await apiClient.get<Helper[]>('/api/admin/helpers');
-  return response.data;
-};
-
-export const createHelper = async (data: HelperFormData): Promise<Helper> => {
-  const response = await apiClient.post<Helper>('/api/admin/helpers', data);
-  return response.data;
-};
-
-export const deleteHelper = async (id: number): Promise<void> => {
-  await apiClient.delete(`/api/admin/helpers/${id}`);
 };
 
 export const getAdminAnnouncements = async (): Promise<Announcement[]> => {

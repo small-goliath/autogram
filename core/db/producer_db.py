@@ -1,4 +1,5 @@
 """Database access layer for producer operations."""
+
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +17,9 @@ async def get_producer_by_username(db: AsyncSession, username: str) -> Producer 
     Returns:
         Producer instance or None if not found
     """
-    result = await db.execute(select(Producer).where(Producer.instagram_username == username))
+    result = await db.execute(
+        select(Producer).where(Producer.instagram_username == username)
+    )
     return result.scalar_one_or_none()
 
 
@@ -43,7 +46,7 @@ async def create_producer(
     db: AsyncSession,
     instagram_username: str,
     instagram_password: str,
-    totp_secret: str | None = None
+    totp_secret: str | None = None,
 ) -> Producer:
     """
     Create new producer.
@@ -69,8 +72,7 @@ async def create_producer(
 
 
 async def update_producer_last_used(
-    db: AsyncSession,
-    instagram_username: str
+    db: AsyncSession, instagram_username: str
 ) -> Producer | None:
     """
     Update producer last used timestamp.
@@ -82,7 +84,9 @@ async def update_producer_last_used(
     Returns:
         Updated Producer instance or None if not found
     """
-    result = await db.execute(select(Producer).where(Producer.instagram_username == instagram_username))
+    result = await db.execute(
+        select(Producer).where(Producer.instagram_username == instagram_username)
+    )
     producer = result.scalar_one_or_none()
     if producer:
         producer.last_used_at = datetime.utcnow()
@@ -91,10 +95,7 @@ async def update_producer_last_used(
     return producer
 
 
-async def delete_producer(
-    db: AsyncSession,
-    instagram_username: str
-) -> bool:
+async def delete_producer(db: AsyncSession, instagram_username: str) -> bool:
     """
     Delete producer.
 
@@ -105,7 +106,9 @@ async def delete_producer(
     Returns:
         True if deleted, False if not found
     """
-    result = await db.execute(select(Producer).where(Producer.instagram_username == instagram_username))
+    result = await db.execute(
+        select(Producer).where(Producer.instagram_username == instagram_username)
+    )
     producer = result.scalar_one_or_none()
     if producer:
         await db.delete(producer)

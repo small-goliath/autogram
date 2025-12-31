@@ -1,4 +1,5 @@
 """Database access layer for admin operations."""
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import Admin

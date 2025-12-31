@@ -2,6 +2,7 @@
 Utility script to create an admin account.
 Usage: python scripts/create_admin.py
 """
+
 import sys
 import asyncio
 from pathlib import Path
@@ -32,7 +33,7 @@ async def create_admin_account(username: str, password: str):
             admin = await admin_db.create_admin(db, username, hashed_password)
             await db.commit()
 
-            print(f"Successfully created admin account:")
+            print("Successfully created admin account:")
             print(f"  Username: {admin.username}")
             print(f"  ID: {admin.id}")
             print(f"  Created: {admin.created_at}")

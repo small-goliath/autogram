@@ -2,6 +2,7 @@
 Configuration module for Autogram project.
 Loads environment variables and provides application settings.
 """
+
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",
         "http://localhost:3001",
-        "https://autogram.example.com"
+        "https://autogram.example.com",
     ]
 
     # Instagram
@@ -39,7 +40,7 @@ class Settings(BaseSettings):
         env_file=".env",  # Look in root directory
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="ignore"
+        extra="ignore",
     )
 
 

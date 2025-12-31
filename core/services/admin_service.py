@@ -1,4 +1,5 @@
 """Business logic for admin operations."""
+
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +8,9 @@ from core.crypto import hash_password, verify_password
 from core.db import admin_db
 
 
-async def authenticate_admin(db: AsyncSession, username: str, password: str) -> dict | None:
+async def authenticate_admin(
+    db: AsyncSession, username: str, password: str
+) -> dict | None:
     """
     Authenticate admin and return user info.
 
@@ -45,7 +48,9 @@ def create_access_token(data: dict) -> str:
     expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 
@@ -61,7 +66,9 @@ def verify_token(token: str) -> dict | None:
     """
     settings = get_settings()
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         return payload
     except JWTError:
         return None

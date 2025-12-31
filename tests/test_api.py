@@ -1,4 +1,5 @@
 """Basic API tests."""
+
 import pytest
 from httpx import AsyncClient
 
@@ -35,8 +36,7 @@ async def test_get_announcements(client: AsyncClient):
 async def test_admin_login_unauthorized(client: AsyncClient):
     """Test admin login with invalid credentials."""
     response = await client.post(
-        "/api/admin/login",
-        json={"username": "invalid", "password": "invalid"}
+        "/api/admin/login", json={"username": "invalid", "password": "invalid"}
     )
     assert response.status_code == 401
 

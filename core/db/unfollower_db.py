@@ -1,4 +1,5 @@
 """Database access layer for unfollower operations."""
+
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,9 +7,7 @@ from core.models import Unfollower
 
 
 async def upsert_unfollowers(
-    db: AsyncSession,
-    owner: str,
-    unfollowers: list[dict]
+    db: AsyncSession, owner: str, unfollowers: list[dict]
 ) -> int:
     """
     Upsert unfollowers (insert or update on conflict).
@@ -43,7 +42,7 @@ async def upsert_unfollowers(
         set_={
             "unfollower_fullname": stmt.excluded.unfollower_fullname,
             "unfollower_profile_url": stmt.excluded.unfollower_profile_url,
-        }
+        },
     )
 
     await db.execute(stmt)
@@ -51,10 +50,7 @@ async def upsert_unfollowers(
     return len(values)
 
 
-async def get_unfollowers_by_owner(
-    db: AsyncSession,
-    owner: str
-) -> list[Unfollower]:
+async def get_unfollowers_by_owner(db: AsyncSession, owner: str) -> list[Unfollower]:
     """
     Get all unfollowers for a specific owner.
 
@@ -65,16 +61,11 @@ async def get_unfollowers_by_owner(
     Returns:
         List of Unfollower instances
     """
-    result = await db.execute(
-        select(Unfollower).where(Unfollower.owner == owner)
-    )
+    result = await db.execute(select(Unfollower).where(Unfollower.owner == owner))
     return list(result.scalars().all())
 
 
-async def delete_unfollowers_by_owner(
-    db: AsyncSession,
-    owner: str
-) -> int:
+async def delete_unfollowers_by_owner(db: AsyncSession, owner: str) -> int:
     """
     Delete all unfollowers for a specific owner.
 
@@ -85,9 +76,7 @@ async def delete_unfollowers_by_owner(
     Returns:
         Number of deleted records
     """
-    result = await db.execute(
-        select(Unfollower).where(Unfollower.owner == owner)
-    )
+    result = await db.execute(select(Unfollower).where(Unfollower.owner == owner))
     unfollowers = list(result.scalars().all())
     count = len(unfollowers)
 

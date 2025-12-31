@@ -10,28 +10,28 @@ This script:
 6. Collects unfollower data
 7. Saves to unfollowers table
 """
+
 import asyncio
 import sys
-import os
 from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
-# Load environment variables
 from dotenv import load_dotenv
-env_path = project_root / '.env'
-load_dotenv(dotenv_path=env_path)
-
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from core.config import get_settings
-from core.db import unfollower_service_user_db, unfollower_db
+from core.db import unfollower_db
 from core.crypto import decrypt_data, generate_totp
 
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-async def login_instagram(page, username: str, password: str, totp_secret: str | None = None):
+env_path = project_root / ".env"
+load_dotenv(dotenv_path=env_path)
+
+
+async def login_instagram(
+    page, username: str, password: str, totp_secret: str | None = None
+):
     """
     Log into Instagram.
 
@@ -44,23 +44,17 @@ async def login_instagram(page, username: str, password: str, totp_secret: str |
     print(f"[{username}] 인스타그램 로그인 페이지로 이동 중...")
     await page.goto("https://www.instagram.com/accounts/login/")
     await page.wait_for_load_state("networkidle")
-
-    # Wait for login form
     await page.wait_for_selector('input[name="username"]', timeout=10000)
 
     print(f"[{username}] 계정 정보 입력 중...")
     await page.fill('input[name="username"]', username)
     await page.fill('input[name="password"]', password)
-
-    # Click login button
     await page.click('button[type="submit"]')
     await page.wait_for_timeout(3000)
 
-    # Check for 2FA
     try:
         two_fa_input = await page.wait_for_selector(
-            'input[name="verificationCode"]',
-            timeout=5000
+            'input[name="verificationCode"]', timeout=5000
         )
 
         if two_fa_input and totp_secret:
@@ -70,35 +64,30 @@ async def login_instagram(page, username: str, password: str, totp_secret: str |
             await page.fill('input[name="verificationCode"]', totp_code)
             print(f"[{username}] 확인 버튼 클릭 중...")
 
-            # Try to find and click the confirm button
             try:
-                # First try with text
                 confirm_button = await page.wait_for_selector(
-                    'button:has-text("확인"), button:has-text("Confirm")',
-                    timeout=3000
+                    'button:has-text("확인"), button:has-text("Confirm")', timeout=3000
                 )
                 await confirm_button.click()
             except PlaywrightTimeout:
-                # Fallback to type="submit"
                 await page.click('button[type="submit"]')
 
             await page.wait_for_timeout(5000)
         elif two_fa_input and not totp_secret:
-            print(f"[{username}] 오류: 2단계 인증이 필요하지만 TOTP 시크릿이 제공되지 않았습니다")
+            print(
+                f"[{username}] 오류: 2단계 인증이 필요하지만 TOTP 시크릿이 제공되지 않았습니다"
+            )
             return False
     except PlaywrightTimeout:
         print(f"[{username}] 2단계 인증 불필요")
 
-    # Wait for login to complete
     print(f"[{username}] 로그인 완료 대기 중...")
     await page.wait_for_timeout(3000)
 
-    # Handle "Save Your Login Info?" popup
     try:
         print(f"[{username}] '로그인 정보 저장' 팝업 확인 중...")
         save_info_button = await page.wait_for_selector(
-            'button:has-text("나중에 하기"), button:has-text("Not Now")',
-            timeout=5000
+            'button:has-text("나중에 하기"), button:has-text("Not Now")', timeout=5000
         )
         if save_info_button:
             print(f"[{username}] '로그인 정보 저장' 팝업 닫는 중...")
@@ -107,12 +96,10 @@ async def login_instagram(page, username: str, password: str, totp_secret: str |
     except PlaywrightTimeout:
         print(f"[{username}] '로그인 정보 저장' 팝업 없음")
 
-    # Handle "Turn on Notifications?" popup
     try:
         print(f"[{username}] 알림 팝업 확인 중...")
         notif_button = await page.wait_for_selector(
-            'button:has-text("나중에 하기"), button:has-text("Not Now")',
-            timeout=5000
+            'button:has-text("나중에 하기"), button:has-text("Not Now")', timeout=5000
         )
         if notif_button:
             print(f"[{username}] 알림 팝업 닫는 중...")
@@ -121,7 +108,6 @@ async def login_instagram(page, username: str, password: str, totp_secret: str |
     except PlaywrightTimeout:
         print(f"[{username}] 알림 팝업 없음")
 
-    # Check if login was successful
     current_url = page.url
     print(f"[{username}] 현재 URL: {current_url}")
 
@@ -166,43 +152,37 @@ async def collect_unfollowers(page, username: str):
     """
     print(f"[{username}] 언팔로워 UI 대기 중...")
 
-    # Wait for the search button to appear
     try:
-        await page.wait_for_selector('button.run-scan', timeout=10000)
+        await page.wait_for_selector("button.run-scan", timeout=10000)
     except PlaywrightTimeout:
         print(f"[{username}] 오류: 조회 버튼을 찾을 수 없습니다")
         return []
 
-    # Click the search button
     print(f"[{username}] 조회 버튼 클릭 중...")
-    await page.click('button.run-scan')
+    await page.click("button.run-scan")
+    print(
+        f"[{username}] 데이터 로딩 대기 중 (팔로워 수가 많을 경우 시간이 오래 걸릴 수 있습니다)..."
+    )
 
-    # Wait for loading to complete by checking the success toast message
-    print(f"[{username}] 데이터 로딩 대기 중 (팔로워 수가 많을 경우 시간이 오래 걸릴 수 있습니다)...")
-
-    # Wait for progressbar to appear
     try:
-        await page.wait_for_selector('.progressbar', timeout=5000)
+        await page.wait_for_selector(".progressbar", timeout=5000)
         print(f"[{username}] 로딩 시작됨...")
     except PlaywrightTimeout:
         print(f"[{username}] 프로그레스바 감지되지 않음")
 
-    # Wait for the completion toast message - this is the accurate way to know when scanning is done
     try:
-        # Wait for toast with "수집이 성공적으로 종료되었습니다!" message
-        await page.wait_for_selector('.toast:has-text("수집이 성공적으로 종료되었습니다!")', timeout=3600000)  # 1 hour max
+        await page.wait_for_selector(
+            '.toast:has-text("수집이 성공적으로 종료되었습니다!")', timeout=3600000
+        )  # 1 hour max
         print(f"[{username}] 스캔 완료!")
     except PlaywrightTimeout:
         print(f"[{username}] 오류: 1시간 이내에 스캔이 완료되지 않았습니다")
         return []
 
-    # Additional wait to ensure all items are rendered
     print(f"[{username}] 모든 항목 렌더링 대기 중...")
     await page.wait_for_timeout(2000)
 
     print(f"[{username}] 언팔로워 데이터 수집 중...")
-
-    # Extract unfollower data
     unfollowers_data = await page.evaluate("""
         () => {
             const results = [];
@@ -237,7 +217,9 @@ async def collect_unfollowers(page, username: str):
     return unfollowers_data
 
 
-async def process_user(username: str, password: str, totp_secret: str | None, db_session):
+async def process_user(
+    username: str, password: str, totp_secret: str | None, db_session
+):
     """
     Process a single user: login, collect unfollowers, save to DB.
     Retries login up to 5 times with browser restart on each attempt.
@@ -249,36 +231,34 @@ async def process_user(username: str, password: str, totp_secret: str | None, db
         db_session: Database session
     """
     async with async_playwright() as p:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"사용자 처리 중: {username}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         max_retries = 5
         login_success = False
         browser = None
         page = None
 
-        # Retry login up to 5 times
         for attempt in range(1, max_retries + 1):
             try:
                 print(f"[{username}] 로그인 시도 {attempt}/{max_retries}")
 
-                # Close previous browser if exists
                 if browser:
                     await browser.close()
                     print(f"[{username}] 이전 브라우저 인스턴스 종료됨")
-                    await asyncio.sleep(2)  # Wait before reopening
+                    await asyncio.sleep(2)
 
-                # Launch new browser
                 browser = await p.chromium.launch(headless=False)
                 context = await browser.new_context(
-                    viewport={'width': 1280, 'height': 720},
-                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+                    viewport={"width": 1280, "height": 720},
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
                 )
                 page = await context.new_page()
 
-                # Attempt login
-                login_success = await login_instagram(page, username, password, totp_secret)
+                login_success = await login_instagram(
+                    page, username, password, totp_secret
+                )
 
                 if login_success:
                     print(f"[{username}] {attempt}번째 시도에서 로그인 성공")
@@ -299,26 +279,20 @@ async def process_user(username: str, password: str, totp_secret: str | None, db
                 await browser.close()
             return
 
-        # Proceed with unfollower collection
         try:
-            # Navigate to user's profile
             print(f"[{username}] 프로필로 이동 중...")
             await page.goto(f"https://www.instagram.com/{username}/")
             await page.wait_for_load_state("networkidle")
-
-            # Inject unfollower script
             await inject_unfollower_script(page)
 
-            # Collect unfollowers
             unfollowers_data = await collect_unfollowers(page, username)
 
             if unfollowers_data:
-                # Save to database
-                print(f"[{username}] {len(unfollowers_data)}명의 언팔로워를 데이터베이스에 저장 중...")
+                print(
+                    f"[{username}] {len(unfollowers_data)}명의 언팔로워를 데이터베이스에 저장 중..."
+                )
                 count = await unfollower_db.upsert_unfollowers(
-                    db_session,
-                    username,
-                    unfollowers_data
+                    db_session, username, unfollowers_data
                 )
                 await db_session.commit()
                 print(f"[{username}] {count}명의 언팔로워 저장 완료")
@@ -334,10 +308,9 @@ async def process_user(username: str, password: str, totp_secret: str | None, db
 
 
 async def main():
-    """Main function."""
-    print("="*60)
+    print("=" * 60)
     print("언팔로워 수집 스크립트")
-    print("="*60)
+    print("=" * 60)
 
     # Setup database
     settings = get_settings()
@@ -359,23 +332,22 @@ async def main():
 
         print(f"처리할 사용자 {len(users)}명 발견\n")
 
-        # Process each user
         for user in users:
             try:
-                # Decrypt credentials
                 password = decrypt_data(user.password)
-                totp_secret = decrypt_data(user.totp_secret) if user.totp_secret else None
+                totp_secret = (
+                    decrypt_data(user.totp_secret) if user.totp_secret else None
+                )
 
-                # Process user
                 await process_user(user.username, password, totp_secret, session)
 
             except Exception as e:
                 print(f"[{user.username}] 사용자 처리 중 오류 발생: {str(e)}")
                 continue
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("스크립트 완료")
-    print("="*60)
+    print("=" * 60)
 
 
 if __name__ == "__main__":
