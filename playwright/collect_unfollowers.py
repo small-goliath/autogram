@@ -12,6 +12,7 @@ This script:
 """
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -27,6 +28,9 @@ sys.path.insert(0, str(project_root))
 
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
+
+# Check if running in headless mode (default: False for local development)
+HEADLESS_MODE = os.getenv("HEADLESS", "false").lower() == "true"
 
 
 async def login_instagram(
@@ -249,7 +253,7 @@ async def process_user(
                     print(f"[{username}] 이전 브라우저 인스턴스 종료됨")
                     await asyncio.sleep(2)
 
-                browser = await p.chromium.launch(headless=False)
+                browser = await p.chromium.launch(headless=HEADLESS_MODE)
                 context = await browser.new_context(
                     viewport={"width": 1280, "height": 720},
                     user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
