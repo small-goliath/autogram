@@ -16,6 +16,9 @@ import os
 import sys
 from pathlib import Path
 
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -23,13 +26,9 @@ from core.config import get_settings
 from core.db import unfollower_db
 from core.crypto import decrypt_data, generate_totp
 
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
 env_path = project_root / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# Check if running in headless mode (default: False for local development)
 HEADLESS_MODE = os.getenv("HEADLESS", "false").lower() == "true"
 
 
