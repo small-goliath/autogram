@@ -118,7 +118,7 @@ pipeline {
 
                     sh """
                         cd ${PROJECT_ROOT}
-                        ${PYTHON_BIN} ${COLLECT_SCRIPT} 2>&1 | tee ${logFile}
+                        ${PYTHON_BIN} ${COLLECT_SCRIPT}
                     """
                 }
             }
