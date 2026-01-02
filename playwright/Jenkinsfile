@@ -79,6 +79,10 @@ pipeline {
                         """
                         echo "가상환경 생성 완료"
                     } else {
+                        sh """
+                            cd ${PROJECT_ROOT}
+                            ${PROJECT_ROOT}/.venv/bin/pip install -r requirements.txt
+                        """
                         echo "가상환경 확인 완료"
                     }
 
@@ -91,8 +95,7 @@ pipeline {
                     if (playwrightBrowserExists == "not_exists") {
                         echo "Playwright 브라우저를 설치합니다..."
                         sh """
-                            # playwright CLI 직접 실행
-                            ${PROJECT_ROOT}/.venv/bin/playwright install chromium
+                            ${PYTHON_BIN} -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); p.chromium.install(); p.stop()"
                         """
                         echo "Playwright 브라우저 설치 완료"
                     } else {
