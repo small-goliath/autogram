@@ -291,6 +291,14 @@ async def process_user(
             unfollowers_data = await collect_unfollowers(page, username)
 
             if unfollowers_data:
+                # 기존 언팔로워 삭제
+                print(f"[{username}] 기존 언팔로워 데이터 삭제 중...")
+                deleted_count = await unfollower_db.delete_unfollowers_by_owner(
+                    db_session, username
+                )
+                print(f"[{username}] {deleted_count}명의 기존 언팔로워 삭제 완료")
+
+                # 새로운 언팔로워 저장
                 print(
                     f"[{username}] {len(unfollowers_data)}명의 언팔로워를 데이터베이스에 저장 중..."
                 )
