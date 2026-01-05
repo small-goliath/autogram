@@ -4,17 +4,17 @@ KakaoTalk 대화 파일을 파싱하여 request_by_week 테이블에 저장하�
 
 import os
 import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
 import re
 from pydantic import BaseModel
 from sqlalchemy import select, delete
 
 from core.database import get_session_maker
 from core.models import RequestByWeek, SnsRaiseUser
-from date_helper import get_target_week_dates, format_date, get_week_start_date
-from logger import setup_logger
-
-# 프로젝트 루트를 Python 경로에 추가
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+from .date_helper import get_target_week_dates, format_date, get_week_start_date
+from .logger import setup_logger
 
 logger = setup_logger("parse_kakaotalk")
 

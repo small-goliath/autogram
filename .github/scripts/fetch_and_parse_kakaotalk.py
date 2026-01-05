@@ -4,6 +4,9 @@ Gmail에서 카카오톡 채팅 파일을 다운로드하고 파싱하여 DB에 
 
 import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
 import base64
 import zipfile
 import io
@@ -15,8 +18,6 @@ from google.auth.transport.requests import Request
 from utils.parse_kakaotalk import parse_kakaotalk_content, save_to_database
 from utils.logger import setup_logger, log_batch_start, log_batch_end
 from utils.discord_notifier import DiscordNotifier
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 logger = setup_logger("fetch_and_parse_kakaotalk")
 
